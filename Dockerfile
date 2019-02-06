@@ -85,13 +85,13 @@ RUN strip ${BITCOIN_PREFIX}/bin/bitcoind
 RUN strip ${BITCOIN_PREFIX}/lib/libbitcoinconsensus.a
 RUN strip ${BITCOIN_PREFIX}/lib/libbitcoinconsensus.so.0.0.0
 
+
 # Build stage for compiled artifacts
-FROM alpine
+FROM alpine AS final
 
 LABEL maintainer.0="nolim1t (@nolim1t)" \
   maintainer.1="meeDamian (@meeDamian)"
 
-RUN adduser -S bitcoin
 RUN sed -i 's/http\:\/\/dl-cdn.alpinelinux.org/https\:\/\/alpine.global.ssl.fastly.net/g' /etc/apk/repositories
 RUN apk --no-cache add \
   boost \
@@ -101,16 +101,14 @@ RUN apk --no-cache add \
   libzmq \
   su-exec
 
-ENV BITCOIN_DATA=/home/bitcoin/.bitcoin
 ENV BITCOIN_VERSION=0.17.1
 ENV BITCOIN_PREFIX=/opt/bitcoin-${BITCOIN_VERSION}
 ENV PATH=${BITCOIN_PREFIX}/bin:$PATH
 
-COPY --from=bitcoin-core /opt /opt
+VOLUME /root/.bitcoin
 
-VOLUME ["/home/bitcoin/.bitcoin"]
+COPY --from=bitcoin-core /opt /opt
 
 EXPOSE 8332 8333 18332 18333 18444 28333 28332
 
-
-CMD ["bitcoind", "-datadir=/home/bitcoin/.bitcoin", "-zmqpubrawblock=tcp://0.0.0.0:28332", "-zmqpubrawtx=tcp://0.0.0.0:28333"]
+CMD ["bitcoind", "-zmqpubrawblock=tcp://0.0.0.0:28332", "-zmqpubrawtx=tcp://0.0.0.0:28333"]
