@@ -89,10 +89,8 @@ RUN strip ${BITCOIN_PREFIX}/lib/libbitcoinconsensus.so.0.0.0
 # Build stage for compiled artifacts
 FROM alpine
 
-LABEL maintainer.0="João Fonseca (@joaopaulofonseca)" \
-  maintainer.1="Pedro Branco (@pedrobranco)" \
-  maintainer.2="Rui Marinho (@ruimarinho)" \
-  maintainer.3="nolim1t (@nolim1t)"
+LABEL maintainer.0="nolim1t (@nolim1t)" \
+  maintainer.1="meeDamian (@meeDamian)"
 
 RUN adduser -S bitcoin
 RUN sed -i 's/http\:\/\/dl-cdn.alpinelinux.org/https\:\/\/alpine.global.ssl.fastly.net/g' /etc/apk/repositories
