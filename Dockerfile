@@ -72,7 +72,6 @@ RUN ./configure LDFLAGS=-L`ls -d /opt/db*`/lib/ CPPFLAGS=-I`ls -d /opt/db*`/incl
     --mandir=/usr/share/man \
     --disable-tests \
     --disable-bench \
-    --disable-wallet \
     --disable-ccache \
     --with-gui=no \
     --with-utils \
