@@ -21,8 +21,8 @@ The changes from upstream include:
 ## Tags
 
 * `latest`, `0.17`, `0.17.1` - currently _latest_ version of Bitcoin Core for both `arm` and `amd64`
-* `0.17.1-linux-arm` - Bitcoin Core version 0.17.1 for `arm` architecture
-* `0.17.1-linux-amd64` - Bitcoin Core version 0.17.1 for `amd64` architecture
+* `0.17.1-linux-arm` - Bitcoin Core version 0.17.1 for `arm` architecture (built manually on an RBP)
+* `0.17.1-linux-amd64` - Bitcoin Core version 0.17.1 for `amd64` architecture (built via CI)
 
 
 ## Usage
