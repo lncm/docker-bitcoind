@@ -70,7 +70,7 @@ RUN strip ${BITCOIN_PREFIX}/lib/libbitcoinconsensus.so.0.0.0
 FROM alpine AS final
 
 LABEL maintainer.0="nolim1t (@nolim1t)" \
-      maintainer.1="meeDamian (@meeDamian)"
+      maintainer.1="Damian Mee (@meeDamian)"
 
 RUN sed -i 's/http\:\/\/dl-cdn.alpinelinux.org/https\:\/\/alpine.global.ssl.fastly.net/g' /etc/apk/repositories
 RUN apk --no-cache add \
