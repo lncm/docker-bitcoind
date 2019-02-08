@@ -1,6 +1,6 @@
 # docker-bitcoind
 
-![](https://img.shields.io/microbadger/image-size/lncm/bitcoind/0.17.1.svg?style=flat) ![](https://img.shields.io/docker/pulls/lncm/berkeleydb.svg?style=flat)
+![](https://img.shields.io/microbadger/image-size/lncm/bitcoind/0.17.1.svg?style=flat) ![](https://img.shields.io/docker/pulls/lncm/bitcoind.svg?style=flat)
 
 This Dockerfile is based on the excellent work from [ruimarinho/docker-bitcoin-core](https://github.com/ruimarinho/docker-bitcoin-core/). 
 
