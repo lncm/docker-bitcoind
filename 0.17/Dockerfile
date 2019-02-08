@@ -1,11 +1,8 @@
-# Build stage for BerkeleyDB
-FROM lncm/berkeleydb:db-4.8.30.NC AS berkeleydb
-
-
 # Build stage for Bitcoin Core
 FROM alpine:3.9 AS bitcoin-core
 
-COPY --from=berkeleydb /opt /opt
+# fetch already built berkeleydb
+COPY --from=lncm/berkeleydb:db-4.8.30.NC /opt /opt
 
 RUN sed -i 's/http\:\/\/dl-cdn.alpinelinux.org/https\:\/\/alpine.global.ssl.fastly.net/g' /etc/apk/repositories
 RUN apk --no-cache add autoconf
