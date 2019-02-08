@@ -27,6 +27,9 @@ The changes from upstream include:
 
 ## Usage
 
+
+### Pull
+
 First pull the image from [Docker Hub]:
 
 ```bash
@@ -37,7 +40,10 @@ docker pull lncm/bitcoind:0.17.1
 
 [Docker Hub]: https://hub.docker.com/r/lncm/bitcoind
 
-Then to run it, execute:
+
+#### Start
+
+Then to start bitcoind, execute:
 
 ```bash
 docker run -it --rm \
@@ -58,4 +64,27 @@ That will run bitcoind such that:
 * port `8333` will be reachable for the peer-to-peer communication,
 * port `28332` will be reachable for ZMQ **block** notifications,
 * port `28333` will be reachable for ZMQ **transaction** notifications,
+* created container will get named `bitcoind`,
 * that command will run the container in the background and print the ID of the container being run.
+
+#### Interact
+
+To issue any commands to a running container, do:
+
+```bash
+docker exec -it bitcoind BINARY COMMAND
+```
+
+Where:
+* `BINARY` is either `bitcoind` or `bitcoin-cli`, and
+* `COMMAND` is something you'd normally pass to the binary   
+
+Examples:
+
+```bash
+docker exec -it bitcoind bitcoind --help
+docker exec -it bitcoind bitcoind --version
+docker exec -it bitcoind bitcoin-cli --help
+docker exec -it bitcoind bitcoin-cli -getinfo
+docker exec -it bitcoind bitcoin-cli getblockcount
+```
