@@ -67,6 +67,7 @@ That will run bitcoind such that:
 * created container will get named `bitcoind`,
 * that command will run the container in the background and print the ID of the container being run.
 
+
 #### Interact
 
 To issue any commands to a running container, do:
