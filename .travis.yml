@@ -1,0 +1,56 @@
+sudo: required
+
+dist: xenial
+
+services:
+  - docker
+
+language: minimal
+
+# SLUG    - converts Gihub slug (`lncm/docker-bitcoind`) to Docker slug (`lncm/bitcoind`)
+# VER     - if TAG is being build, VER contains only MAJOR and MINOR parts of the version (ex. `0.18.0` -> `0.18`)
+# DIR     - if BRANCH is being built, use DIR with the highest version number
+# PREFIX  - sets Dockerfile prefix.  Be it based on `git tag`, or highest-version DIR name
+env:
+  global:
+    - SLUG="${TRAVIS_REPO_SLUG/docker-/}"
+    - VER=$(echo ${TRAVIS_TAG} | cut -d. -f1,2)
+    - DIR=$(ls -vd */ | grep '^[0-9]' | tail -n 1 | tr -d /)
+    - PREFIX="${VER:-$DIR}"
+
+stages:
+  - build
+  - name: deploy
+    if: tag IS present
+
+jobs:
+  include:
+    - stage: build
+      name: "Build Docker image from source for amd64"
+      env:  ARCH=amd64  SOURCE=code
+
+    - name: "Build Docker image from binary for amd64"
+      env:  ARCH=amd64  SOURCE=binary
+
+#    - name: "Build Docker image from binary for arm"
+#      env: ARCH=arm SOURCE=binary
+
+    - stage: deploy
+      name: "Aggregate Docker images under one manifest"
+      script: ./travis/docker-manifest.sh
+
+    - name: "Upload Docker containers to Github Releases"
+      deploy:
+        skip_cleanup: true
+        provider: releases
+        api_key:
+          secure: H7PazuFTFL/sTAf6DH47wB81rfB6AXsPdiDBTmMvPc6+P7zr3O+1g6T1c93sUq5wrVqUnD/XKLmPXDTWhiQVoLkdDPzM9fdd2JTzgbzfXTDtg7gi/mNuZOgftoKwRYiLhNnWR/hKmtLcXFYYzKVRt1BUGShv722y4lVl/GPolzRLGyO1+5f0dC48VBjYmDxInUkM32bFkVSlQ2ro+OndecRhn/Pd8oOPPOwwM+/4iplsbBe4pRJ4kHMjgxdJRnV3kb+jUuA0Q+4U5XXPDGLw4BDh6/wZZ4IUgIAubNam32B7lql9t733ksuPtWA40rkwEFmfQyGGU1QEzb4gHUOcKpKfm43s8THjU85EnSSuyv3NWmZL4/wtmnJL/SpW6azdnSjycJUlddXX1MvsMvdnrZrSSU4WWCHtxOxgm1Figv/QAtn48NMwhmpCya2HYBZKlpqqPYj0j3pk9+ifJANF9DzMJ/xBXuPBW7M3WFCDlnGIqXXRAKbk6mEkecBk8JH0Qn/gGVm+pTV9Rcm2wKcQwrSyBkC//nJ6CXQXZ9OSW8m7NqkCRfIjSQ9g/caZgkxNEKyNYWssLB8UJ8CKyrkRH0jjfXJ1bhwbyw3Opg6b6rafPqQHwGb9Dm8Z8QlnhyafVEcry9kRVax6NWMNZkCP19U0t0Fhs0OFR2Ex7FbZ+Cw=
+        file_glob: true
+        file: images/*.tgz
+        on:
+          repo: lncm/docker-bitcoind
+          tags: true
+
+before_script: ./travis/before-script.sh
+script: ./travis/script.sh
+
