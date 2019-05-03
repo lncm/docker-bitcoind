@@ -72,8 +72,6 @@ script:
       sudo cp  ./.travis/build-arm.sh  /alpine/
 
       /alpine/enter-chroot ls -la /
-      /alpine/enter-chroot ls -la /alpine/
-
       /alpine/enter-chroot  /build-arm.sh
 
     elif [[ ! -z "${ARCH}" ]]; then
