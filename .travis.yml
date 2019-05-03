@@ -69,10 +69,8 @@ script:
       chmod +x alpine-chroot-install
       sudo ./alpine-chroot-install  -a armv7  -b v3.9
 
-      sudo cp  ./.travis/build-arm.sh  /alpine/
-
-      /alpine/enter-chroot  ls -la /home/travis/build/lncm/docker-bitcoind/
-      /alpine/enter-chroot  "/build-arm.sh"
+      /alpine/enter-chroot ls -la ./
+      /alpine/enter-chroot  /home/travis/build/lncm/docker-bitcoind/.travis/build-arm.sh
 
     elif [[ ! -z "${ARCH}" ]]; then
       ./.travis/pull-all.sh
