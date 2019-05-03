@@ -17,8 +17,8 @@ if [[ ! -z "${ARCH}" ]]; then
     if [[ -n "${TRAVIS_TAG}" ]]; then
         echo "${DOCKER_PASS}" | docker login -u="${DOCKER_USER}" --password-stdin
 
-        docker tag  ${TAG}  "${SLUG}:${TRAVIS_TAG}-${ARCH}"
-        docker push "${SLUG}:${TRAVIS_TAG}-${ARCH}"
+        docker tag  ${TAG}  "${SLUG}:${TRAVIS_TAG}-linux-${ARCH}"
+        docker push "${SLUG}:${TRAVIS_TAG}-linux-${ARCH}"
     fi
 
     exit 0
