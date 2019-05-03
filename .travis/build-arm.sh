@@ -1,16 +1,6 @@
 #!/bin/bash
 set -e
 
-wget https://raw.githubusercontent.com/alpinelinux/alpine-chroot-install/v0.10.0/alpine-chroot-install \
-    && echo 'dcceb34aa63767579f533a7f2e733c4d662b0d1b  alpine-chroot-install' | sha1sum -c \
-    || exit 1
-
-chmod +x alpine-chroot-install
-sudo ./alpine-chroot-install  -a armv7  -b v3.9
-
-/alpine/enter-chroot uname -a
-/alpine/enter-chroot env
-
 apk add docker
 
 TAG="${SLUG}:${TRAVIS_TAG:-$TRAVIS_BRANCH}-${FROM}-linux-${ARCH}"
