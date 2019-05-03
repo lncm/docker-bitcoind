@@ -26,18 +26,21 @@ stages:
 jobs:
   include:
     - stage: build
-      name: "Build Docker image from source for amd64"
-      env:  ARCH=amd64  SOURCE=code
+      name: "Build Docker image from SOURCE for amd64"
+      env:  ARCH=amd64  FROM=source
 
-    - name: "Build Docker image from binary for amd64"
-      env:  ARCH=amd64  SOURCE=binary
+#    - name: "Build Docker image from BINARY for amd64"
+#      env:  ARCH=amd64  FROM=binary
 
-#    - name: "Build Docker image from binary for arm"
-#      env: ARCH=arm SOURCE=binary
+    - name: "Build Docker image from SOURCE for arm"
+      env:  ARCH=arm  FROM=source
+
+#    - name: "Build Docker image from BINARY for arm"
+#      env:  ARCH=arm  FROM=binary
 
     - stage: deploy
       name: "Aggregate Docker images under one manifest"
-      script: ./travis/docker-manifest.sh
+      script: ./.travis/docker-manifest.sh
 
     - name: "Upload Docker containers to Github Releases"
       deploy:
@@ -51,6 +54,16 @@ jobs:
           repo: lncm/docker-bitcoind
           tags: true
 
-before_script: ./travis/before-script.sh
-script: ./travis/script.sh
+before_script: ./.travis/before-script.sh
+script:
+  - >
+    if [[ "${ARCH}" = "amd64" ]]; then
+      ./.travis/build-amd64.sh
+
+    elif [[ "${ARCH}" = "arm" ]]; then
+      ./.travis/build-arm.sh
+
+    elif [[ ! -z "${ARCH}" ]]; then
+      ./.travis/pull-all.sh
+    fi
 
