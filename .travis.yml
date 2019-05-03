@@ -71,7 +71,7 @@ script:
 
       sudo cp  ./.travis/build-arm.sh  /alpine/
 
-      /alpine/enter-chroot  ls -la /alpine/home/travis/build/lncm/docker-bitcoind
+      /alpine/enter-chroot  ls -la /home/travis/build/lncm/docker-bitcoind/
       /alpine/enter-chroot  "/build-arm.sh"
 
     elif [[ ! -z "${ARCH}" ]]; then
