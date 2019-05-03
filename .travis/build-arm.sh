@@ -6,11 +6,12 @@ wget https://raw.githubusercontent.com/alpinelinux/alpine-chroot-install/v0.10.0
     || exit 1
 
 chmod +x alpine-chroot-install
-./alpine-chroot-install  -a armv7  -b v3.9
+sudo ./alpine-chroot-install  -a armv7  -b v3.9
 
 /alpine/enter-chroot uname -a
 /alpine/enter-chroot env
 
+apk add docker
 
 TAG="${SLUG}:${TRAVIS_TAG:-$TRAVIS_BRANCH}-${FROM}-linux-${ARCH}"
 
