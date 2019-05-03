@@ -14,12 +14,15 @@ chmod +x alpine-chroot-install
 
 TAG="${SLUG}:${TRAVIS_TAG:-$TRAVIS_BRANCH}-${FROM}-linux-${ARCH}"
 
+echo "Building ${TAG} with ${PREFIX}/Dockerfile…"
+
 if [[ "${FROM}" = "binary" ]]; then
     docker build  --no-cache  --build-arg "arch=${ARCH}"  -t ${TAG}  ${PREFIX}/
 
 else
     docker build  --no-cache  -t ${TAG}  ${PREFIX}/
 fi
+
 
 # Push image, if tag was specified
 if [[ -n "${TRAVIS_TAG}" ]]; then
