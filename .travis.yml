@@ -67,12 +67,12 @@ script:
           || exit 1
 
       chmod +x alpine-chroot-install
-      sudo ./alpine-chroot-install  -a armv7  -b v3.9
+      sudo ./alpine-chroot-install  -a armhf  -b v3.9
 
       cat /alpine/enter-chroot
 
-      /alpine/enter-chroot ls -la ./.travis/
-      /alpine/enter-chroot '.travis/build-arm.sh'
+      sh /alpine/enter-chroot 'ls -la ./.travis/'
+      sh /alpine/enter-chroot 'sh .travis/build-arm.sh'
 
     elif [[ ! -z "${ARCH}" ]]; then
       ./.travis/pull-all.sh
