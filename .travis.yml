@@ -71,8 +71,8 @@ script:
 
       cat /alpine/enter-chroot
 
-      sh /alpine/enter-chroot 'ls -la ./.travis/'
-      sh /alpine/enter-chroot 'sh .travis/build-arm.sh'
+      /alpine/enter-chroot ls -la ~/.travis/
+      /alpine/enter-chroot sh ~/.travis/build-arm.sh
 
     elif [[ ! -z "${ARCH}" ]]; then
       ./.travis/pull-all.sh
