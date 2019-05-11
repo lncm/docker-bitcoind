@@ -37,7 +37,10 @@ RUN set -ex \
 ENV BITCOIN_VERSION=0.18.0
 ENV BITCOIN_PREFIX=/opt/bitcoin-${BITCOIN_VERSION}
 
-RUN wget https://bitcoin.org/bin/bitcoin-core-${BITCOIN_VERSION}/SHA256SUMS.asc
+# Download checksums (intentionally different source than source code)
+RUN wget https://bitcoincore.org/bin/bitcoin-core-${BITCOIN_VERSION}/SHA256SUMS.asc
+
+# Download source code (intentionally different source than checksums)
 RUN wget https://bitcoin.org/bin/bitcoin-core-${BITCOIN_VERSION}/bitcoin-${BITCOIN_VERSION}.tar.gz
 
 # Verify that hashes are signed with the previously imported key
