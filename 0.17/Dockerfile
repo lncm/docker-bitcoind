@@ -86,7 +86,17 @@ VOLUME /root/.bitcoin
 
 COPY --from=bitcoin-core /opt /opt
 
-EXPOSE 8080 8332 8333 18332 18333 18444 28333 28332
+# REST interface
+EXPOSE 8080
+
+# P2P network (mainnet, testnet & regnet respectively)
+EXPOSE 8333 18333 18444
+
+# RPC interface (mainnet, testnet & regnet respectively)
+EXPOSE 8332 18332 18443
+
+# ZMQ ports (for transactions & blocks respectively)
+EXPOSE 28332 28333
 
 ENTRYPOINT ["bitcoind"]
 CMD ["bitcoind", "-zmqpubrawblock=tcp://0.0.0.0:28332", "-zmqpubrawtx=tcp://0.0.0.0:28333"]
