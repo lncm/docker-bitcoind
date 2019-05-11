@@ -69,10 +69,9 @@ script:
       chmod +x alpine-chroot-install
       sudo ./alpine-chroot-install  -a armhf  -b v3.9
 
-      cat /alpine/enter-chroot
-
-      /alpine/enter-chroot ls -la ~/.travis/
-      /alpine/enter-chroot sh ~/.travis/build-arm.sh
+      /alpine/enter-chroot apk add bash
+      /alpine/enter-chroot ~/.travis/build-arm.sh || true
+      /alpine/enter-chroot ./.travis/build-arm.sh || true
 
     elif [[ ! -z "${ARCH}" ]]; then
       ./.travis/pull-all.sh
