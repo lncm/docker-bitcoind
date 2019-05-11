@@ -4,6 +4,7 @@ FROM alpine:3.9 AS bitcoin-core
 # fetch already built berkeleydb
 COPY --from=lncm/berkeleydb:db-4.8.30.NC /opt /opt
 
+# Replace `http:` repositories with `https:` ones
 RUN sed -i 's/http\:\/\/dl-cdn.alpinelinux.org/https\:\/\/alpine.global.ssl.fastly.net/g' /etc/apk/repositories
 RUN apk --no-cache add autoconf
 RUN apk --no-cache add automake
@@ -34,15 +35,26 @@ ENV BITCOIN_PREFIX=/opt/bitcoin-${BITCOIN_VERSION}
 
 RUN wget https://bitcoin.org/bin/bitcoin-core-${BITCOIN_VERSION}/SHA256SUMS.asc
 RUN wget https://bitcoin.org/bin/bitcoin-core-${BITCOIN_VERSION}/bitcoin-${BITCOIN_VERSION}.tar.gz
+
+# Verify that hashes are signed with the previously imported key
 RUN gpg --verify SHA256SUMS.asc
+
+# Verify that downloaded source-code archive has exactly the hash that's provided
 RUN grep " bitcoin-${BITCOIN_VERSION}.tar.gz\$" SHA256SUMS.asc | sha256sum -c -
+
+# Extract
 RUN tar -xzf *.tar.gz
 
+# Change to the extraced directory
 WORKDIR /bitcoin-${BITCOIN_VERSION}
 
+# ???
 RUN sed -i '/AC_PREREQ/a\AR_FLAGS=cr' src/univalue/configure.ac
+# ???
 RUN sed -i '/AX_PROG_CC_FOR_BUILD/a\AR_FLAGS=cr' src/secp256k1/configure.ac
+# ???
 RUN sed -i s:sys/fcntl.h:fcntl.h: src/compat.h
+
 RUN ./autogen.sh
 RUN ./configure LDFLAGS=-L`ls -d /opt/db*`/lib/ CPPFLAGS=-I`ls -d /opt/db*`/include/ \
     --prefix=${BITCOIN_PREFIX} \
@@ -56,6 +68,7 @@ RUN ./configure LDFLAGS=-L`ls -d /opt/db*`/lib/ CPPFLAGS=-I`ls -d /opt/db*`/incl
     --with-daemon
 RUN make
 RUN make install
+
 RUN strip ${BITCOIN_PREFIX}/bin/bitcoin-cli
 RUN strip ${BITCOIN_PREFIX}/bin/bitcoin-tx
 RUN strip ${BITCOIN_PREFIX}/bin/bitcoind
@@ -69,6 +82,8 @@ FROM alpine:3.9 AS final
 LABEL maintainer.0="nolim1t (@nolim1t)" \
       maintainer.1="Damian Mee (@meeDamian)"
 
+# TODO: Eliminating the two RUN lines below is necessary to cross-compile…
+# Replace `http:` repositories with `https:` ones
 RUN sed -i 's/http\:\/\/dl-cdn.alpinelinux.org/https\:\/\/alpine.global.ssl.fastly.net/g' /etc/apk/repositories
 RUN apk --no-cache add \
   boost \
@@ -86,14 +101,17 @@ VOLUME /root/.bitcoin
 
 COPY --from=bitcoin-core /opt /opt
 
-# Ports:
-# 8080  -
-# 8332  - RPC           main net
-# 8333  - P2P network   main net
-# 18332 - RPC           test net
-# 18443 - RPC           reg  net
+# REST interface
+EXPOSE 8080
 
-EXPOSE 8080 8332 8333 18332 18333 18444 28333 28332
+# P2P network (mainnet, testnet & regnet respectively)
+EXPOSE 8333 18333 18444
+
+# RPC interface (mainnet, testnet & regnet respectively)
+EXPOSE 8332 18332 18443
+
+# ZMQ ports (for transactions & blocks respectively)
+EXPOSE 28332 28333
 
 ENTRYPOINT ["bitcoind"]
 CMD ["bitcoind", "-zmqpubrawblock=tcp://0.0.0.0:28332", "-zmqpubrawtx=tcp://0.0.0.0:28333"]
