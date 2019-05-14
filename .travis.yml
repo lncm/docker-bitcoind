@@ -36,6 +36,9 @@ jobs:
       name: "Build Docker image from SOURCE for arm"
       env:  ARCH=arm  FROM=source
 
+    - name: "See how fast building toolchain works on Travis"
+      script: docker build 0.18/
+
 #    - name: "Build Docker image from BINARY for arm"
 #      env:  ARCH=arm  FROM=binary
 

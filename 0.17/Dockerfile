@@ -4,6 +4,7 @@ FROM alpine:3.9 AS bitcoin-core
 # fetch already built berkeleydb
 COPY --from=lncm/berkeleydb:db-4.8.30.NC /opt /opt
 
+# Use APK repos over HTTPS. See: https://github.com/gliderlabs/docker-alpine/issues/184
 RUN sed -i 's/http\:\/\/dl-cdn.alpinelinux.org/https\:\/\/alpine.global.ssl.fastly.net/g' /etc/apk/repositories
 RUN apk --no-cache add autoconf
 RUN apk --no-cache add automake
@@ -69,6 +70,7 @@ FROM alpine:3.9 AS final
 LABEL maintainer.0="nolim1t (@nolim1t)" \
       maintainer.1="Damian Mee (@meeDamian)"
 
+# Use APK repos over HTTPS. See: https://github.com/gliderlabs/docker-alpine/issues/184
 RUN sed -i 's/http\:\/\/dl-cdn.alpinelinux.org/https\:\/\/alpine.global.ssl.fastly.net/g' /etc/apk/repositories
 RUN apk --no-cache add \
   boost \
