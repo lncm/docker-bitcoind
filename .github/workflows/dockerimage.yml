@@ -1,4 +1,4 @@
-name: Docker Image CI
+name: Build bitcoind on amd64
 
 on: [push]
 
