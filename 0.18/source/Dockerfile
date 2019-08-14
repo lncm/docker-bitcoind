@@ -6,20 +6,24 @@ COPY --from=lncm/berkeleydb:db-4.8.30.NC /opt /opt
 
 # Use APK repos over HTTPS. See: https://github.com/gliderlabs/docker-alpine/issues/184
 RUN sed -i 's/http\:\/\/dl-cdn.alpinelinux.org/https\:\/\/alpine.global.ssl.fastly.net/g' /etc/apk/repositories
-RUN apk --no-cache add autoconf
-RUN apk --no-cache add automake
-RUN apk --no-cache add boost-dev
-RUN apk --no-cache add build-base
-RUN apk --no-cache add chrpath
-RUN apk --no-cache add file
-RUN apk --no-cache add gnupg
-RUN apk --no-cache add libevent-dev
-RUN apk --no-cache add libressl
-RUN apk --no-cache add libressl-dev
-RUN apk --no-cache add libtool
-RUN apk --no-cache add linux-headers
-RUN apk --no-cache add protobuf-dev
-RUN apk --no-cache add zeromq-dev
+
+# install packages necessary to build Bitcoind
+RUN apk add --no-cache --update \
+    autoconf \
+    automake \
+    boost-dev \
+    build-base \
+    chrpath \
+    file \
+    gnupg \
+    libevent-dev \
+    libressl \
+    libressl-dev \
+    libtool \
+    linux-headers \
+    protobuf-dev \
+    zeromq-dev
+
 RUN set -ex \
   && for key in \
     90C8019E36C2E964 \
@@ -30,20 +34,34 @@ RUN set -ex \
     gpg --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys "$key" ; \
   done
 
-ENV BITCOIN_VERSION=0.17.1
+ENV BITCOIN_VERSION=0.18.0
 ENV BITCOIN_PREFIX=/opt/bitcoin-${BITCOIN_VERSION}
 
-RUN wget https://bitcoin.org/bin/bitcoin-core-${BITCOIN_VERSION}/SHA256SUMS.asc
+# Download checksums (intentionally different source than source code)
+RUN wget https://bitcoincore.org/bin/bitcoin-core-${BITCOIN_VERSION}/SHA256SUMS.asc
+
+# Download source code (intentionally different source than checksums)
 RUN wget https://bitcoin.org/bin/bitcoin-core-${BITCOIN_VERSION}/bitcoin-${BITCOIN_VERSION}.tar.gz
+
+# Verify that hashes are signed with the previously imported key
 RUN gpg --verify SHA256SUMS.asc
+
+# Verify that downloaded source-code archive has exactly the hash that's provided
 RUN grep " bitcoin-${BITCOIN_VERSION}.tar.gz\$" SHA256SUMS.asc | sha256sum -c -
+
+# Extract
 RUN tar -xzf *.tar.gz
 
+# Change to the extraced directory
 WORKDIR /bitcoin-${BITCOIN_VERSION}
 
+# ???
 RUN sed -i '/AC_PREREQ/a\AR_FLAGS=cr' src/univalue/configure.ac
+# ???
 RUN sed -i '/AX_PROG_CC_FOR_BUILD/a\AR_FLAGS=cr' src/secp256k1/configure.ac
+# ???
 RUN sed -i s:sys/fcntl.h:fcntl.h: src/compat.h
+
 RUN ./autogen.sh
 RUN ./configure LDFLAGS=-L`ls -d /opt/db*`/lib/ CPPFLAGS=-I`ls -d /opt/db*`/include/ \
     --prefix=${BITCOIN_PREFIX} \
@@ -57,6 +75,7 @@ RUN ./configure LDFLAGS=-L`ls -d /opt/db*`/lib/ CPPFLAGS=-I`ls -d /opt/db*`/incl
     --with-daemon
 RUN make
 RUN make install
+
 RUN strip ${BITCOIN_PREFIX}/bin/bitcoin-cli
 RUN strip ${BITCOIN_PREFIX}/bin/bitcoin-tx
 RUN strip ${BITCOIN_PREFIX}/bin/bitcoind
@@ -70,17 +89,19 @@ FROM alpine:3.9 AS final
 LABEL maintainer.0="nolim1t (@nolim1t)" \
       maintainer.1="Damian Mee (@meeDamian)"
 
+# TODO: Eliminating the two RUN lines below is crucial to make cross-compilation possible…
 # Use APK repos over HTTPS. See: https://github.com/gliderlabs/docker-alpine/issues/184
 RUN sed -i 's/http\:\/\/dl-cdn.alpinelinux.org/https\:\/\/alpine.global.ssl.fastly.net/g' /etc/apk/repositories
-RUN apk --no-cache add \
-  boost \
-  boost-program_options \
-  libevent \
-  libressl \
-  libzmq \
-  su-exec
+RUN apk --no-cache --update \
+    add \
+    boost \
+    boost-program_options \
+    libevent \
+    libressl \
+    libzmq \
+    su-exec
 
-ENV BITCOIN_VERSION=0.17.1
+ENV BITCOIN_VERSION=0.18.0
 ENV BITCOIN_PREFIX=/opt/bitcoin-${BITCOIN_VERSION}
 ENV PATH=${BITCOIN_PREFIX}/bin:$PATH
 
