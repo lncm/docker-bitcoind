@@ -1,5 +1,5 @@
 # Build stage for Bitcoin Core
-FROM arm32v6/alpine:3.10 AS bitcoin-core
+FROM arm32v6/alpine:3.9 AS bitcoin-core
 
 # fetch already built berkeleydb
 COPY --from=lncm/berkeleydb:db-4.8.30.NC-linux-arm /opt /opt
@@ -84,7 +84,7 @@ RUN strip ${BITCOIN_PREFIX}/lib/libbitcoinconsensus.so.0.0.0
 
 
 # Build stage for compiled artifacts
-FROM arm32v6/alpine:3.10 AS final
+FROM arm32v6/alpine:3.9 AS final
 
 LABEL maintainer.0="nolim1t (@nolim1t)" \
       maintainer.1="Damian Mee (@meeDamian)"
