@@ -6,6 +6,10 @@ jobs:
     steps:
       - uses: actions/checkout@master
       - name: prepare stuff
-        run: ./prepare.sh
+        run: docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+        
+      - name: test stuff
+        run: docker run --rm -t arm32v6/alpine uname -m
+
       - name: Build the Docker image
         run: docker build . --file 0.18/source/Dockerfile --tag bitcoind:arm-$(date +%s)
