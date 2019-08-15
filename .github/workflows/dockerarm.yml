@@ -5,11 +5,5 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@master
-      - name: prepare stuff
-        run: docker run --rm --privileged multiarch/qemu-user-static:arm --reset -p yes
-
-      - name: test stuff
-        run: docker run --rm -t arm32v6/alpine uname -m
-
       - name: Build the Docker image
         run: docker build . --file 0.18/source/Dockerfile --tag bitcoind:arm-$(date +%s)
