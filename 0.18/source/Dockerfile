@@ -1,13 +1,5 @@
-FROM alpine:3.10 AS downloader
-
-RUN wget --quiet -O /qemu-arm-static \
-    https://github.com/multiarch/qemu-user-static/releases/download/v4.0.0-2/qemu-arm-static ;\
-    chmod +x /qemu-arm-static
-
 # Build stage for Bitcoin Core
 FROM arm32v7/alpine:3.10 AS bitcoin-core
-
-COPY --from=downloader /qemu-arm-static  /usr/bin/qemu-arm-static
 
 # fetch already built berkeleydb
 COPY --from=lncm/berkeleydb:db-4.8.30.NC-linux-arm /opt /opt
@@ -93,8 +85,6 @@ RUN strip ${BITCOIN_PREFIX}/lib/libbitcoinconsensus.so.0.0.0
 
 # Build stage for compiled artifacts
 FROM arm32v7/alpine:3.10 AS final
-
-COPY --from=downloader /qemu-arm-static  /usr/bin/qemu-arm-static
 
 LABEL maintainer.0="nolim1t (@nolim1t)" \
       maintainer.1="Damian Mee (@meeDamian)"

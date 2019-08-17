@@ -5,7 +5,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@master
-      - name: register qemu(?)
-        run: docker run --rm --privileged multiarch/qemu-user-static:register
+      - name: Register self-compiled qemu
+        run: docker run --rm --privileged meedamian/simple-qemu-test:minimal --reset -p yes
       - name: Build the Docker image
         run: docker build . --file 0.18/source/Dockerfile --tag bitcoind:arm-$(date +%s)
