@@ -4,6 +4,8 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@master
-    - name: Build the Docker image
-      run: docker build . --file 0.17/Dockerfile --tag bitcoind:$(date +%s)
+      - uses: actions/checkout@master
+      - name: Start building the Docker image (1st part)
+        run: docker images && docker build -t partial-bitcoind-amd64  0.18/source-native/Dockerfile
+      - name: Complete the Docker image (2snd part)
+        run: docker images && docker build   -t bitcoind-amd64  0.18/source-native/Dockerfile.part2

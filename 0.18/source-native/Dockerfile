@@ -1,12 +1,12 @@
 # Build stage for Bitcoin Core
-FROM arm32v7/alpine:3.10 AS bitcoin-core
+FROM alpine:3.10 AS bitcoin-core
 
 # Because sometimes this happens on emulated architectures:
 #   https://github.com/bitcoin/bitcoin/issues/14948
 ENV LC_ALL=C.UTF-8
 
 # fetch already built berkeleydb
-COPY --from=lncm/berkeleydb:db-4.8.30.NC-linux-arm /opt /opt
+COPY --from=lncm/berkeleydb:db-4.8.30.NC /opt /opt
 
 
 # Use APK repos over HTTPS. See: https://github.com/gliderlabs/docker-alpine/issues/184
@@ -68,7 +68,7 @@ RUN sed -i '/AX_PROG_CC_FOR_BUILD/a\AR_FLAGS=cr' src/secp256k1/configure.ac
 RUN sed -i s:sys/fcntl.h:fcntl.h: src/compat.h
 
 RUN ./autogen.sh
-RUN ./configure LDFLAGS=-L`ls -d /opt/db*`/lib/ CPPFLAGS=-I`ls -d /opt/db*`/include/ \
+RUN ./configure LDFLAGS=-L$(ls -d /opt/db*)/lib/ CPPFLAGS=-I$(ls -d /opt/db*)/include/ \
     --prefix=${BITCOIN_PREFIX} \
     --mandir=/usr/share/man \
     --disable-ccache \
