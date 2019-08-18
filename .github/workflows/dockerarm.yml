@@ -8,6 +8,6 @@ jobs:
       - name: Register self-compiled qemu
         run: docker run --rm --privileged meedamian/simple-qemu-test:minimal --reset -p yes
       - name: Start building the Docker image (1st part)
-        run: docker images && docker build  -t partial-bitcoind-arm  -f 0.18/source/Dockerfile  .
+        run: docker images && docker build  -t partial-bitcoind-arm  -f 0.18/source/Dockerfile  0.18/
       - name: Complete the Docker image (2snd part)
-        run: docker images && docker build  -t bitcoind-arm  -f 0.18/source/Dockerfile.part2  .
+        run: docker images && docker build  -t bitcoind-arm  -f 0.18/source/Dockerfile.part2  0.18/

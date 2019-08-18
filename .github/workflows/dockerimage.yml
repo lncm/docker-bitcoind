@@ -6,6 +6,6 @@ jobs:
     steps:
       - uses: actions/checkout@master
       - name: Start building the Docker image (1st part)
-        run: docker images && docker build  -t partial-bitcoind-amd64  -f 0.18/source-native/Dockerfile  .
+        run: docker images && docker build  -t partial-bitcoind-amd64  -f 0.18/source-native/Dockerfile  0.18/
       - name: Complete the Docker image (2snd part)
-        run: docker images && docker build   -t bitcoind-amd64  -f 0.18/source-native/Dockerfile.part2  .
+        run: docker images && docker build   -t bitcoind-amd64  -f 0.18/source-native/Dockerfile.part2  0.18/
