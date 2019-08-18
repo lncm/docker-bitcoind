@@ -2,7 +2,7 @@
 FROM arm32v7/alpine:3.10 AS bitcoin-core
 
 # fetch already built berkeleydb
-COPY --from=lncm/berkeleydb:db-4.8.30.NC-linux-arm /opt /opt
+COPY --from=lncm/berkeleydb:db-4.8.30.NC /opt /opt
 
 
 # Use APK repos over HTTPS. See: https://github.com/gliderlabs/docker-alpine/issues/184
@@ -69,7 +69,7 @@ RUN sed -i '/AX_PROG_CC_FOR_BUILD/a\AR_FLAGS=cr' src/secp256k1/configure.ac
 RUN sed -i s:sys/fcntl.h:fcntl.h: src/compat.h
 
 RUN ./autogen.sh
-RUN ./configure LDFLAGS=-L`ls -d /opt/db*`/lib/ CPPFLAGS=-I`ls -d /opt/db*`/include/ \
+RUN ./configure LDFLAGS=-L$(ls -d /opt/db*)/lib/ CPPFLAGS=-I$(ls -d /opt/db*)/include/ \
     --prefix=${BITCOIN_PREFIX} \
     --mandir=/usr/share/man \
     --disable-ccache \
@@ -79,54 +79,54 @@ RUN ./configure LDFLAGS=-L`ls -d /opt/db*`/lib/ CPPFLAGS=-I`ls -d /opt/db*`/incl
     --with-daemon
 RUN make
 
-#RUN make check
-#RUN make install
-#
-#RUN strip ${BITCOIN_PREFIX}/bin/bitcoin-cli
-#RUN strip ${BITCOIN_PREFIX}/bin/bitcoin-tx
-#RUN strip ${BITCOIN_PREFIX}/bin/bitcoind
-#RUN strip ${BITCOIN_PREFIX}/lib/libbitcoinconsensus.a
-#RUN strip ${BITCOIN_PREFIX}/lib/libbitcoinconsensus.so.0.0.0
-#
-#
-## Build stage for compiled artifacts
-#FROM arm32v7/alpine:3.10 AS final
-#
-#LABEL maintainer.0="nolim1t (@nolim1t)" \
-#      maintainer.1="Damian Mee (@meeDamian)"
-#
-#ENV LC_ALL=C.UTF-8
-#
-## Use APK repos over HTTPS. See: https://github.com/gliderlabs/docker-alpine/issues/184
-#RUN sed -i 's/http\:\/\/dl-cdn.alpinelinux.org/https\:\/\/alpine.global.ssl.fastly.net/g' /etc/apk/repositories
-#RUN apk --no-cache --update \
-#    add \
-#    boost \
-#    boost-program_options \
-#    libevent \
-#    libressl \
-#    libzmq \
-#    su-exec
-#
-#ENV BITCOIN_VERSION=0.18.1
-#ENV BITCOIN_PREFIX=/opt/bitcoin-${BITCOIN_VERSION}
-#ENV PATH=${BITCOIN_PREFIX}/bin:$PATH
-#
-#VOLUME /root/.bitcoin
-#
-#COPY --from=bitcoin-core /opt /opt
-#
-## REST interface
-#EXPOSE 8080
-#
-## P2P network (mainnet, testnet & regnet respectively)
-#EXPOSE 8333 18333 18444
-#
-## RPC interface (mainnet, testnet & regnet respectively)
-#EXPOSE 8332 18332 18443
-#
-## ZMQ ports (for transactions & blocks respectively)
-#EXPOSE 28332 28333
-#
-#ENTRYPOINT ["bitcoind"]
-#CMD ["bitcoind", "-zmqpubrawblock=tcp://0.0.0.0:28332", "-zmqpubrawtx=tcp://0.0.0.0:28333"]
+RUN make check
+RUN make install
+
+RUN strip ${BITCOIN_PREFIX}/bin/bitcoin-cli
+RUN strip ${BITCOIN_PREFIX}/bin/bitcoin-tx
+RUN strip ${BITCOIN_PREFIX}/bin/bitcoind
+RUN strip ${BITCOIN_PREFIX}/lib/libbitcoinconsensus.a
+RUN strip ${BITCOIN_PREFIX}/lib/libbitcoinconsensus.so.0.0.0
+
+
+# Build stage for compiled artifacts
+FROM arm32v7/alpine:3.10 AS final
+
+LABEL maintainer.0="nolim1t (@nolim1t)" \
+      maintainer.1="Damian Mee (@meeDamian)"
+
+ENV LC_ALL=C.UTF-8
+
+# Use APK repos over HTTPS. See: https://github.com/gliderlabs/docker-alpine/issues/184
+RUN sed -i 's/http\:\/\/dl-cdn.alpinelinux.org/https\:\/\/alpine.global.ssl.fastly.net/g' /etc/apk/repositories
+RUN apk --no-cache --update \
+    add \
+    boost \
+    boost-program_options \
+    libevent \
+    libressl \
+    libzmq \
+    su-exec
+
+ENV BITCOIN_VERSION=0.18.1
+ENV BITCOIN_PREFIX=/opt/bitcoin-${BITCOIN_VERSION}
+ENV PATH=${BITCOIN_PREFIX}/bin:$PATH
+
+VOLUME /root/.bitcoin
+
+COPY --from=bitcoin-core /opt /opt
+
+# REST interface
+EXPOSE 8080
+
+# P2P network (mainnet, testnet & regnet respectively)
+EXPOSE 8333 18333 18444
+
+# RPC interface (mainnet, testnet & regnet respectively)
+EXPOSE 8332 18332 18443
+
+# ZMQ ports (for transactions & blocks respectively)
+EXPOSE 28332 28333
+
+ENTRYPOINT ["bitcoind"]
+CMD ["bitcoind", "-zmqpubrawblock=tcp://0.0.0.0:28332", "-zmqpubrawtx=tcp://0.0.0.0:28333"]
