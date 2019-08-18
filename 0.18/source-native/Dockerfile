@@ -91,7 +91,7 @@ RUN strip ${BITCOIN_PREFIX}/lib/libbitcoinconsensus.so.0.0.0
 
 
 # Build stage for compiled artifacts
-FROM arm32v7/alpine:3.10 AS final
+FROM alpine:3.10 AS final
 
 LABEL maintainer.0="nolim1t (@nolim1t)" \
       maintainer.1="Damian Mee (@meeDamian)"
