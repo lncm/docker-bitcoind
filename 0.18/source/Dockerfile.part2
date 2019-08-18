@@ -3,6 +3,7 @@ FROM partial-bitcoind-arm
 RUN make check
 RUN make install
 
+RUN strip ${BITCOIN_PREFIX}/bin/bitcoin-wallet
 RUN strip ${BITCOIN_PREFIX}/bin/bitcoin-cli
 RUN strip ${BITCOIN_PREFIX}/bin/bitcoin-tx
 RUN strip ${BITCOIN_PREFIX}/bin/bitcoind
