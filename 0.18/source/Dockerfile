@@ -25,6 +25,9 @@ RUN apk add --no-cache --update \
     protobuf-dev \
     zeromq-dev
 
+# See: https://github.com/bitcoin/bitcoin/issues/8706
+RUN apk del openssl-dev
+
 RUN set -ex \
   && for key in \
     90C8019E36C2E964 \
