@@ -2,6 +2,7 @@ name: Build bitcoind on arm
 on: [push]
 jobs:
   build:
+    name: berkeleydb bundled into Dockerfile
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@master
@@ -9,3 +10,12 @@ jobs:
         run: docker run --rm --privileged meedamian/simple-qemu-test:minimal --reset -p yes
       - name: Build Docker image
         run: docker build  0.18/  -f 0.18/source/Dockerfile
+  build2:
+    name: berkeleydb explicitly arm
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@master
+      - name: Register self-compiled qemu
+        run: docker run --rm --privileged meedamian/simple-qemu-test:minimal --reset -p yes
+      - name: Build Docker image
+        run: docker build  0.18/  -f 0.18/source2/Dockerfile
