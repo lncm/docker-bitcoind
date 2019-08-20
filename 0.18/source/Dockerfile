@@ -1,5 +1,5 @@
 # Build stage for Bitcoin Core
-FROM arm32v7/alpine:3.10 AS bitcoin-core
+FROM arm32v6/alpine:3.10 AS bitcoin-core
 
 # fetch already built berkeleydb
 COPY --from=lncm/berkeleydb:db-4.8.30.NC /opt /opt
@@ -24,9 +24,6 @@ RUN apk add --no-cache --update \
     linux-headers \
     protobuf-dev \
     zeromq-dev
-
-# See: https://github.com/bitcoin/bitcoin/issues/8706
-RUN apk del openssl-dev
 
 RUN set -ex \
   && for key in \
@@ -93,7 +90,7 @@ RUN strip ${BITCOIN_PREFIX}/lib/libbitcoinconsensus.so.0.0.0
 
 
 # Build stage for compiled artifacts
-FROM arm32v7/alpine:3.10 AS final
+FROM arm32v6/alpine:3.10 AS final
 
 LABEL maintainer.0="nolim1t (@nolim1t)" \
       maintainer.1="Damian Mee (@meeDamian)"
