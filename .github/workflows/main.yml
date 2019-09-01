@@ -29,7 +29,7 @@ jobs:
         if: matrix.arch != 'amd64'
         run: |
           if [[ "${{ matrix.arch }}" == "aarch64" ]]; then
-            sed -ie 's/FROM alpine/FROM arm64\/alpine/g' 0.16/Dockerfile
+            sed -ie 's/FROM alpine/FROM arm64v8\/alpine/g' 0.16/Dockerfile
             exit 0
           fi
 
