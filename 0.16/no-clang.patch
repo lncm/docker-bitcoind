@@ -1,6 +1,6 @@
---- install_db4.sh	2019-09-02 02:47:52.000000000 +0700
-+++ install_db4.sh	2019-09-02 02:52:15.000000000 +0700
-@@ -64,11 +64,7 @@
+--- install_db4.sh	2019-09-02 03:03:18.000000000 +0700
++++ install_db4.sh	2019-09-02 03:04:02.000000000 +0700
+@@ -63,11 +63,7 @@
  tar -xzvf ${BDB_VERSION}.tar.gz -C "$BDB_PREFIX"
  cd "${BDB_PREFIX}/${BDB_VERSION}/"
  
@@ -11,5 +11,5 @@
 -patch -p2 < clang.patch
 +sed s/__atomic_compare_exchange/__atomic_compare_exchange_db/g -i dbinc/atomic.h
  
- # The packaged config.guess and config.sub are ancient (2009) and can cause build issues.
- # Replace them with modern versions.
+ cd build_unix/
+ 
