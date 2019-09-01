@@ -21,6 +21,9 @@ RUN sed -i 's/http\:\/\/dl-cdn.alpinelinux.org/https\:\/\/alpine.global.ssl.fast
 
 FROM build-base AS bitcoin-initial
 
+# Temporarily change shell to bash, so that arrays can be used
+SHELL ["/bin/bash", "-c"]
+
 RUN KEYS=( \
         90C8019E36C2E964 \
     ); \
@@ -31,6 +34,9 @@ RUN KEYS=( \
   (gpg --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys ${KEYS[@]}; echo "hkp://p80.pool.sks-keyservers.net:80") &  \
   wait -n && \
   gpg --list-keys
+  
+# Restore default shell
+SHELL ["/bin/sh", "-c"]
 
 ENV BITCOIN_VERSION=0.16.3
 ENV BITCOIN_PREFIX=/opt/bitcoin-${BITCOIN_VERSION}
