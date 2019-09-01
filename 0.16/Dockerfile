@@ -56,13 +56,17 @@ RUN grep " bitcoin-${BITCOIN_VERSION}.tar.gz\$" SHA256SUMS.asc | sha256sum -c -
 # Extract
 RUN tar -xzf "bitcoin-${BITCOIN_VERSION}.tar.gz"
 
-RUN cp "/${BITCOIN_VERSION}/contrib/install_db4.sh" /
+RUN cp "/bitcoin-${BITCOIN_VERSION}/contrib/install_db4.sh" /
 
 
 # Build stage for BerkeleyDB
 FROM build-base as berkeleydb
 
 COPY --from=bitcoin-initial /install_db4.sh /
+
+COPY /no-clang.patch .
+
+RUN patch -p0 -i no-clang.patch
 
 RUN /install_db4.sh /opt/
 
