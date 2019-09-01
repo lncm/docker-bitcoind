@@ -18,35 +18,8 @@ RUN sed -i 's/http\:\/\/dl-cdn.alpinelinux.org/https\:\/\/alpine.global.ssl.fast
         protobuf-dev \
         zeromq-dev
 
-# Build stage for BerkeleyDB
-FROM build-base as berkeleydb
 
-ENV BDB_VERSION=db-4.8.30.NC
-ENV BDB_HASH='12edc0df75bf9abd7f82f821795bcee50f42cb2e5f76a6a281b85732798364ef'
-
-ENV BDB_PREFIX=/opt/${BDB_VERSION}
-
-# Download, verify checksum, and uncompress BerkeleyDB source code
-RUN wget https://download.oracle.com/berkeley-db/${BDB_VERSION}.tar.gz && \
-    echo "${BDB_HASH}  ${BDB_VERSION}.tar.gz" | sha256sum -c && \
-    tar -xzf "${BDB_VERSION}.tar.gz"
-
-RUN sed s/__atomic_compare_exchange/__atomic_compare_exchange_db/g -i ${BDB_VERSION}/dbinc/atomic.h
-RUN mkdir -p ${BDB_PREFIX}
-
-WORKDIR /${BDB_VERSION}/build_unix
-
-RUN ../dist/configure --enable-cxx --disable-shared --with-pic --prefix=${BDB_PREFIX}
-RUN make -j4
-RUN make install
-RUN rm -rf ${BDB_PREFIX}/docs
-
-
-# Build stage for Bitcoin Core
-FROM build-base AS bitcoin-core
-
-# Fetch already built berkeleydb
-COPY --from=berkeleydb /opt /
+FROM build-base AS bitcoin-initial
 
 RUN KEYS=( \
         90C8019E36C2E964 \
@@ -76,6 +49,25 @@ RUN grep " bitcoin-${BITCOIN_VERSION}.tar.gz\$" SHA256SUMS.asc | sha256sum -c -
 
 # Extract
 RUN tar -xzf "bitcoin-${BITCOIN_VERSION}.tar.gz"
+
+RUN cp "${BITCOIN_PREFIX}/contrib/install_db4.sh" /
+
+
+# Build stage for BerkeleyDB
+FROM build-base as berkeleydb
+
+COPY --from=bitcoin-initial /install_db4.sh /
+
+RUN /install_db4.sh /opt/
+
+
+# Build stage for Bitcoin Core
+FROM bitcoin-initial AS bitcoin-core
+
+# Fetch already built berkeleydb
+COPY --from=berkeleydb /opt /
+
+
 
 # Change to the extracted directory
 WORKDIR /bitcoin-${BITCOIN_VERSION}
