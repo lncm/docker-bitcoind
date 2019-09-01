@@ -1,0 +1,43 @@
+name: Build bitcoind
+
+on: [push]
+
+#on:
+#  push:
+#    tags:
+#      - '*'
+
+jobs:
+  build:
+    name: build
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        arch:
+          - arm
+          - aarch64
+          - amd64
+
+    steps:
+      - uses: actions/checkout@master
+
+      - name: Register self-compiled qemu
+        if: matrix.arch != "amd64"
+        run: docker run --rm --privileged meedamian/simple-qemu:v4.1.0 -p yes
+
+      - name: Try to run arch-specific image
+        if: matrix.arch != "amd64"
+        run: |
+          if [[ "${{ matrix.arch }}" == "aarch64" ]]; then
+            sed -ie 's/FROM alpine/FROM arm64\/alpine/g' 0.16/Dockerfile
+            exit 0
+          fi
+
+          if [[ "${{ matrix.arch }}" == "arm" ]]; then
+            sed -ie 's/FROM alpine/FROM arm32v6\/alpine/g' 0.16/Dockerfile
+            exit 0
+          fi
+
+      - name: Build Docker image
+        run: docker build  0.16/  -f 0.16/Dockerfile
+

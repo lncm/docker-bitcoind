@@ -1,72 +1,72 @@
+FROM alpine:3.10 as build-base
+
+# Use APK repos over HTTPS. See: https://github.com/gliderlabs/docker-alpine/issues/184
+RUN sed -i 's/http\:\/\/dl-cdn.alpinelinux.org/https\:\/\/alpine.global.ssl.fastly.net/g' /etc/apk/repositories && \
+    apk add --no-cache --update \
+        autoconf \
+        automake \
+        boost-dev \
+        build-base \
+        chrpath \
+        file \
+        gnupg \
+        libevent-dev \
+        libressl \
+        libressl-dev \
+        libtool \
+        linux-headers \
+        protobuf-dev \
+        zeromq-dev
+
 # Build stage for BerkeleyDB
-FROM arm32v6/alpine:3.10 AS berkeleydb
+FROM build-base as berkeleydb
 
-RUN sed -i 's/http\:\/\/dl-cdn.alpinelinux.org/https\:\/\/alpine.global.ssl.fastly.net/g' /etc/apk/repositories
-RUN apk --no-cache add autoconf
-RUN apk --no-cache add automake
-RUN apk --no-cache add build-base
-RUN apk --no-cache add libressl
+ENV BDB_VERSION=db-4.8.30.NC
+ENV BDB_HASH='12edc0df75bf9abd7f82f821795bcee50f42cb2e5f76a6a281b85732798364ef'
 
-ENV BERKELEYDB_VERSION=db-4.8.30.NC
-ENV BERKELEYDB_PREFIX=/opt/${BERKELEYDB_VERSION}
+ENV BDB_PREFIX=/opt/${BDB_VERSION}
 
-RUN wget https://download.oracle.com/berkeley-db/${BERKELEYDB_VERSION}.tar.gz
-RUN tar -xzf *.tar.gz
-RUN sed s/__atomic_compare_exchange/__atomic_compare_exchange_db/g -i ${BERKELEYDB_VERSION}/dbinc/atomic.h
-RUN mkdir -p ${BERKELEYDB_PREFIX}
+# Download, verify checksum, and uncompress BerkeleyDB source code
+RUN wget https://download.oracle.com/berkeley-db/${BDB_VERSION}.tar.gz && \
+    echo "${BDB_HASH}  ${BDB_VERSION}.tar.gz" | sha256sum -c && \
+    tar -xzf "${BDB_VERSION}.tar.gz"
 
-WORKDIR /${BERKELEYDB_VERSION}/build_unix
+RUN sed s/__atomic_compare_exchange/__atomic_compare_exchange_db/g -i ${BDB_VERSION}/dbinc/atomic.h
+RUN mkdir -p ${BDB_PREFIX}
 
-RUN ../dist/configure --enable-cxx --disable-shared --with-pic --prefix=${BERKELEYDB_PREFIX}
+WORKDIR /${BDB_VERSION}/build_unix
+
+RUN ../dist/configure --enable-cxx --disable-shared --with-pic --prefix=${BDB_PREFIX}
 RUN make -j4
 RUN make install
-RUN rm -rf ${BERKELEYDB_PREFIX}/docs
+RUN rm -rf ${BDB_PREFIX}/docs
 
 
 # Build stage for Bitcoin Core
-FROM arm32v6/alpine:3.10 AS bitcoin-core
+FROM build-base AS bitcoin-core
 
-# copy already built berkeleydb
-COPY --from=berkeleydb /opt /opt
+# Fetch already built berkeleydb
+COPY --from=berkeleydb /opt /
 
-# Use APK repos over HTTPS. See: https://github.com/gliderlabs/docker-alpine/issues/184
-RUN sed -i 's/http\:\/\/dl-cdn.alpinelinux.org/https\:\/\/alpine.global.ssl.fastly.net/g' /etc/apk/repositories
+RUN KEYS=( \
+        90C8019E36C2E964 \
+    ); \
+  (gpg --keyserver pgp.mit.edu --recv-keys ${KEYS[@]}; echo "pgp.mit.edu done") &  \
+  sleep 1s; \
+  (gpg --keyserver keyserver.pgp.com --recv-keys ${KEYS[@]}; echo "keyserver.pgp.com done") &  \
+  (gpg --keyserver ha.pool.sks-keyservers.net --recv-keys ${KEYS[@]}; echo "ha.pool.sks-keyservers.net") &  \
+  (gpg --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys ${KEYS[@]}; echo "hkp://p80.pool.sks-keyservers.net:80") &  \
+  wait -n && \
+  gpg --list-keys
 
-# install packages necessary to build Bitcoind
-RUN apk add --no-cache --update \
-    autoconf \
-    automake \
-    boost-dev \
-    build-base \
-    chrpath \
-    file \
-    gnupg \
-    libevent-dev \
-    libressl \
-    libressl-dev \
-    libtool \
-    linux-headers \
-    protobuf-dev \
-    zeromq-dev
-
-RUN set -ex \
-  && for key in \
-    90C8019E36C2E964 \
-  ; do \
-    gpg --keyserver pgp.mit.edu --recv-keys "$key" || \
-    gpg --keyserver keyserver.pgp.com --recv-keys "$key" || \
-    gpg --keyserver ha.pool.sks-keyservers.net --recv-keys "$key" || \
-    gpg --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys "$key" ; \
-  done
-
-ENV BITCOIN_VERSION=0.18.1
+ENV BITCOIN_VERSION=0.16.3
 ENV BITCOIN_PREFIX=/opt/bitcoin-${BITCOIN_VERSION}
 
 # Download checksums (intentionally different source than source code)
-RUN wget https://bitcoincore.org/bin/bitcoin-core-${BITCOIN_VERSION}/SHA256SUMS.asc
+RUN wget "https://bitcoincore.org/bin/bitcoin-core-${BITCOIN_VERSION}/SHA256SUMS.asc"
 
 # Download source code (intentionally different source than checksums)
-RUN wget https://bitcoin.org/bin/bitcoin-core-${BITCOIN_VERSION}/bitcoin-${BITCOIN_VERSION}.tar.gz
+RUN wget "https://bitcoin.org/bin/bitcoin-core-${BITCOIN_VERSION}/bitcoin-${BITCOIN_VERSION}.tar.gz"
 
 # Verify that hashes are signed with the previously imported key
 RUN gpg --verify SHA256SUMS.asc
@@ -75,15 +75,15 @@ RUN gpg --verify SHA256SUMS.asc
 RUN grep " bitcoin-${BITCOIN_VERSION}.tar.gz\$" SHA256SUMS.asc | sha256sum -c -
 
 # Extract
-RUN tar -xzf *.tar.gz
+RUN tar -xzf "bitcoin-${BITCOIN_VERSION}.tar.gz"
 
-# Change to the extraced directory
+# Change to the extracted directory
 WORKDIR /bitcoin-${BITCOIN_VERSION}
 
 # Disable test that fails on Alpine for unrelated reasons: missing locale.  Not important.
 #   https://github.com/bitcoin/bitcoin/issues/14948
-COPY skip-fs-test-of-utf8.patch .
-RUN patch -p0 < skip-fs-test-of-utf8.patch
+#COPY skip-fs-test-of-utf8.patch .
+#RUN patch -p0 < skip-fs-test-of-utf8.patch
 
 # ???
 RUN sed -i '/AC_PREREQ/a\AR_FLAGS=cr' src/univalue/configure.ac
@@ -114,12 +114,10 @@ RUN strip ${BITCOIN_PREFIX}/lib/libbitcoinconsensus.so.0.0.0
 
 
 # Build stage for compiled artifacts
-FROM arm32v6/alpine:3.10 AS final
+FROM alpine:3.10 AS final
 
 LABEL maintainer.0="nolim1t (@nolim1t)" \
       maintainer.1="Damian Mee (@meeDamian)"
-
-ENV LC_ALL=C.UTF-8
 
 # Use APK repos over HTTPS. See: https://github.com/gliderlabs/docker-alpine/issues/184
 RUN sed -i 's/http\:\/\/dl-cdn.alpinelinux.org/https\:\/\/alpine.global.ssl.fastly.net/g' /etc/apk/repositories
@@ -132,13 +130,13 @@ RUN apk --no-cache --update \
     libzmq \
     su-exec
 
-ENV BITCOIN_VERSION=0.18.1
+ENV BITCOIN_VERSION=0.16.3
 ENV BITCOIN_PREFIX=/opt/bitcoin-${BITCOIN_VERSION}
 ENV PATH=${BITCOIN_PREFIX}/bin:$PATH
 
 VOLUME /root/.bitcoin
 
-COPY --from=bitcoin-core /opt /opt
+COPY --from=bitcoin-core /opt /
 
 # REST interface
 EXPOSE 8080

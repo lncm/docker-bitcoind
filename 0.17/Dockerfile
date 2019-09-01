@@ -6,29 +6,35 @@ COPY --from=lncm/berkeleydb:db-4.8.30.NC /opt /opt
 
 # Use APK repos over HTTPS. See: https://github.com/gliderlabs/docker-alpine/issues/184
 RUN sed -i 's/http\:\/\/dl-cdn.alpinelinux.org/https\:\/\/alpine.global.ssl.fastly.net/g' /etc/apk/repositories
-RUN apk --no-cache add autoconf
-RUN apk --no-cache add automake
-RUN apk --no-cache add boost-dev
-RUN apk --no-cache add build-base
-RUN apk --no-cache add chrpath
-RUN apk --no-cache add file
-RUN apk --no-cache add gnupg
-RUN apk --no-cache add libevent-dev
-RUN apk --no-cache add libressl
-RUN apk --no-cache add libressl-dev
-RUN apk --no-cache add libtool
-RUN apk --no-cache add linux-headers
-RUN apk --no-cache add protobuf-dev
-RUN apk --no-cache add zeromq-dev
-RUN set -ex \
-  && for key in \
-    90C8019E36C2E964 \
-  ; do \
-    gpg --keyserver pgp.mit.edu --recv-keys "$key" || \
-    gpg --keyserver keyserver.pgp.com --recv-keys "$key" || \
-    gpg --keyserver ha.pool.sks-keyservers.net --recv-keys "$key" || \
-    gpg --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys "$key" ; \
-  done
+
+# Install packages necessary to build Bitcoind
+RUN apk add --no-cache --update \
+    autoconf \
+    automake \
+    boost-dev \
+    build-base \
+    chrpath \
+    file \
+    gnupg \
+    libevent-dev \
+    libressl \
+    libressl-dev \
+    libtool \
+    linux-headers \
+    protobuf-dev \
+    zeromq-dev
+
+RUN KEYS=( \
+        90C8019E36C2E964 \
+    ); \
+  (gpg --keyserver pgp.mit.edu --recv-keys ${KEYS[@]}; echo "pgp.mit.edu done") &  \
+  sleep 1s; \
+  (gpg --keyserver keyserver.pgp.com --recv-keys ${KEYS[@]}; echo "keyserver.pgp.com done") &  \
+  (gpg --keyserver ha.pool.sks-keyservers.net --recv-keys ${KEYS[@]}; echo "ha.pool.sks-keyservers.net") &  \
+  (gpg --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys ${KEYS[@]}; echo "hkp://p80.pool.sks-keyservers.net:80") &  \
+  wait -n && \
+  gpg --list-keys
+
 
 ENV BITCOIN_VERSION=0.17.1
 ENV BITCOIN_PREFIX=/opt/bitcoin-${BITCOIN_VERSION}

@@ -7,7 +7,7 @@ services:
 
 language: minimal
 
-# SLUG    - converts Gihub slug (`lncm/docker-bitcoind`) to Docker slug (`lncm/bitcoind`)
+# SLUG    - converts Github slug (`lncm/docker-bitcoind`) to Docker slug (`lncm/bitcoind`)
 # VER     - if TAG is being build, VER contains only MAJOR and MINOR parts of the version (ex. `0.18.0` -> `0.18`)
 # DIR     - if BRANCH is being built, use DIR with the highest version number
 # PREFIX  - sets Dockerfile prefix.  Be it based on `git tag`, or highest-version DIR name
