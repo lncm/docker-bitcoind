@@ -34,7 +34,7 @@ RUN KEYS=( \
   (gpg --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys ${KEYS[@]}; echo "hkp://p80.pool.sks-keyservers.net:80") &  \
   wait -n && \
   gpg --list-keys
-  
+
 # Restore default shell
 SHELL ["/bin/sh", "-c"]
 
@@ -56,7 +56,7 @@ RUN grep " bitcoin-${BITCOIN_VERSION}.tar.gz\$" SHA256SUMS.asc | sha256sum -c -
 # Extract
 RUN tar -xzf "bitcoin-${BITCOIN_VERSION}.tar.gz"
 
-RUN cp "${BITCOIN_PREFIX}/contrib/install_db4.sh" /
+RUN cp "/${BITCOIN_VERSION}/contrib/install_db4.sh" /
 
 
 # Build stage for BerkeleyDB
