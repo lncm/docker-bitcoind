@@ -22,11 +22,11 @@ jobs:
       - uses: actions/checkout@master
 
       - name: Register self-compiled qemu
-        if: matrix.arch != "amd64"
+        if: matrix.arch != 'amd64'
         run: docker run --rm --privileged meedamian/simple-qemu:v4.1.0 -p yes
 
       - name: Try to run arch-specific image
-        if: matrix.arch != "amd64"
+        if: matrix.arch != 'amd64'
         run: |
           if [[ "${{ matrix.arch }}" == "aarch64" ]]; then
             sed -ie 's/FROM alpine/FROM arm64\/alpine/g' 0.16/Dockerfile
