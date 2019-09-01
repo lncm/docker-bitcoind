@@ -54,7 +54,8 @@ RUN gpg --verify SHA256SUMS.asc
 RUN grep " bitcoin-${BITCOIN_VERSION}.tar.gz\$" SHA256SUMS.asc | sha256sum -c -
 
 # Extract
-RUN tar -xzf "bitcoin-${BITCOIN_VERSION}.tar.gz"
+RUN tar -xzf "bitcoin-${BITCOIN_VERSION}.tar.gz" && \
+    rm -f "bitcoin-${BITCOIN_VERSION}.tar.gz"
 
 RUN cp "/bitcoin-${BITCOIN_VERSION}/contrib/install_db4.sh" /
 
@@ -68,15 +69,15 @@ COPY /no-clang.patch .
 
 RUN patch -p0 -i no-clang.patch
 
-RUN /install_db4.sh /opt/
+RUN /install_db4.sh /opt/ && \
+    rm -f /install_db4.sh
 
 
 # Build stage for Bitcoin Core
 FROM bitcoin-initial AS bitcoin-core
 
 # Fetch already built berkeleydb
-COPY --from=berkeleydb /opt /
-
+COPY --from=berkeleydb /opt/ /opt/
 
 
 # Change to the extracted directory
@@ -138,7 +139,7 @@ ENV PATH=${BITCOIN_PREFIX}/bin:$PATH
 
 VOLUME /root/.bitcoin
 
-COPY --from=bitcoin-core /opt /
+COPY --from=bitcoin-core /opt /opt
 
 # REST interface
 EXPOSE 8080
