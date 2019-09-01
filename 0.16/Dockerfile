@@ -19,7 +19,26 @@ RUN sed -i 's/http\:\/\/dl-cdn.alpinelinux.org/https\:\/\/alpine.global.ssl.fast
         zeromq-dev
 
 
+# Build stage for BerkeleyDB
+FROM build-base as berkeleydb
+
+# TODO: verify…
+RUN wget -q https://raw.githubusercontent.com/bitcoin/bitcoin/1ac454a3844b9b8389de0f660fa9455c0efa7140/contrib/install_db4.sh
+
+RUN chmod +x install_db4.sh
+
+# TODO: rename & explain the patch
+COPY /no-clang.patch .
+RUN patch -p0 -i no-clang.patch
+
+RUN /install_db4.sh /opt/ && \
+    rm -f /install_db4.sh
+
+
 FROM build-base AS bitcoin-initial
+
+# Fetch already built berkeleydb
+COPY --from=berkeleydb /opt/ /opt/
 
 # Temporarily change shell to bash, so that arrays can be used
 SHELL ["/bin/bash", "-c"]
@@ -56,28 +75,6 @@ RUN grep " bitcoin-${BITCOIN_VERSION}.tar.gz\$" SHA256SUMS.asc | sha256sum -c -
 # Extract
 RUN tar -xzf "bitcoin-${BITCOIN_VERSION}.tar.gz" && \
     rm -f "bitcoin-${BITCOIN_VERSION}.tar.gz"
-
-RUN cp "/bitcoin-${BITCOIN_VERSION}/contrib/install_db4.sh" /
-
-
-# Build stage for BerkeleyDB
-FROM build-base as berkeleydb
-
-COPY --from=bitcoin-initial /install_db4.sh /
-
-COPY /no-clang.patch .
-
-RUN patch -p0 -i no-clang.patch
-
-RUN /install_db4.sh /opt/ && \
-    rm -f /install_db4.sh
-
-
-# Build stage for Bitcoin Core
-FROM bitcoin-initial AS bitcoin-core
-
-# Fetch already built berkeleydb
-COPY --from=berkeleydb /opt/ /opt/
 
 
 # Change to the extracted directory
