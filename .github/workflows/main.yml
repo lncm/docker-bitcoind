@@ -9,7 +9,7 @@ on: [push]
 
 jobs:
   build-berkeley:
-    name: build
+    name: Build BerkeleyDB
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -60,8 +60,8 @@ jobs:
           path: "./berkeleydb-${{ matrix.arch }}.tgz"
 
 
-  build:
-    name: build
+  build-bitcoind:
+    name: Build Bitcoind
     runs-on: ubuntu-latest
     strategy:
       matrix:
