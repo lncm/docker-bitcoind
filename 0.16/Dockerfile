@@ -35,7 +35,7 @@ RUN /install_db4.sh /opt/ && \
     rm -f /install_db4.sh
 
 
-FROM build-base AS bitcoin-initial
+FROM build-base AS bitcoin-core
 
 # Fetch already built berkeleydb
 COPY --from=berkeleydb /opt/ /opt/
@@ -96,6 +96,7 @@ RUN ./autogen.sh
 RUN ./configure LDFLAGS=-L$(ls -d /opt/db*)/lib/ CPPFLAGS=-I$(ls -d /opt/db*)/include/ \
     --prefix=${BITCOIN_PREFIX} \
     --mandir=/usr/share/man \
+    --disable-bench \
     --disable-ccache \
     --with-gui=no \
     --with-utils \
