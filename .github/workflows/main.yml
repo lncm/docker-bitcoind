@@ -21,9 +21,17 @@ jobs:
     steps:
       - uses: actions/checkout@v1.0.0
 
+#      - name: Register self-compiled qemu
+#        if: matrix.arch != 'amd64'
+#        run: docker run --rm --privileged meedamian/simple-qemu:v4.1.0-${{matrix.arch}} -p yes
+
       - name: Register self-compiled qemu
-        if: matrix.arch != 'amd64'
-        run: docker run --rm --privileged meedamian/simple-qemu:v4.1.0-${{matrix.arch}} -p yes
+        if: matrix.arch == 'arm32v7'
+        run: docker run --rm --privileged meedamian/simple-qemu:v4.1.0-arm -p yes
+
+      - name: Register self-compiled qemu
+        if: matrix.arch == 'arm64v8'
+        run: docker run --rm --privileged meedamian/simple-qemu:v4.1.0-aarch64 -p yes
 
       # TODO: check if the line importing berkeleydb needs editing too
       - name: Change Dockerfile to use arch-specific base images
