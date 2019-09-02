@@ -55,13 +55,7 @@ jobs:
 
       - name: Upload BDB image as artifact
         uses: actions/upload-artifact@v1.0.0
-        if: matrix.arch == 'amd64'
-        with:
-          name: "berkeleydb-${{ matrix.arch }}.tgz"
-
-      - name: Upload BDB image as artifact
-        uses: actions/upload-artifact@v1.0.0
-        if: matrix.arch == 'arm'
+        if: matrix.arch != 'aarch64'
         with:
           name: "berkeleydb-${{ matrix.arch }}.tgz"
           path: .
