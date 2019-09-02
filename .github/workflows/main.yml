@@ -44,7 +44,7 @@ jobs:
       - name: Build Docker image
         if: matrix.arch == 'amd64' || matrix.bench == true
         run: |
-          if [[ "${matrix.bench}" == "true" ]]; then
+          if [[ "${{ matrix.bench }}" == "true" ]]; then
             sed -i '/--disable-bench/d' 0.16/Dockerfile
           fi
 
