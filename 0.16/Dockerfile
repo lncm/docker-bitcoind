@@ -21,7 +21,7 @@ RUN sed -i 's/http\:\/\/dl-cdn.alpinelinux.org/https\:\/\/alpine.global.ssl.fast
 FROM build-base AS bitcoin-core
 
 # Fetch already built berkeleydb
-COPY --from=meeDamian/berkeleydb:db-4.8.30.NC  /opt/  /opt/
+COPY --from=meedamian/berkeleydb:db-4.8.30.NC  /opt/  /opt/
 
 # Temporarily change shell to bash, so that arrays can be used
 SHELL ["/bin/bash", "-c"]
