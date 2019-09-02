@@ -14,8 +14,8 @@ jobs:
     strategy:
       matrix:
         arch:
-          - arm
-          - aarch64
+#          - arm
+#          - aarch64
           - amd64
         bench:
           - true
