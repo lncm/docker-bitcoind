@@ -18,7 +18,6 @@ RUN sed -i 's/http\:\/\/dl-cdn.alpinelinux.org/https\:\/\/alpine.global.ssl.fast
         protobuf-dev \
         zeromq-dev
 
-
 # Build stage for BerkeleyDB
 FROM build-base as berkeleydb
 
@@ -27,9 +26,9 @@ RUN wget -q https://raw.githubusercontent.com/bitcoin/bitcoin/1ac454a3844b9b8389
 
 RUN chmod +x install_db4.sh
 
-# TODO: rename & explain the patch
-COPY /no-clang.patch .
-RUN patch -p0 -i no-clang.patch
+# TODO: explain the patch
+COPY /bdb-install-script.patch .
+RUN patch -p0 -i bdb-install-script.patch
 
 RUN /install_db4.sh /opt/ && \
     rm -f /install_db4.sh
@@ -96,7 +95,6 @@ RUN ./autogen.sh
 RUN ./configure LDFLAGS=-L$(ls -d /opt/db*)/lib/ CPPFLAGS=-I$(ls -d /opt/db*)/include/ \
     --prefix=${BITCOIN_PREFIX} \
     --mandir=/usr/share/man \
-    --disable-bench \
     --disable-ccache \
     --with-gui=no \
     --with-utils \

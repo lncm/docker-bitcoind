@@ -8,45 +8,103 @@ on: [push]
 #      - '*'
 
 jobs:
+  build-berkeley:
+    name: build
+      runs-on: ubuntu-latest
+      strategy:
+        matrix:
+          arch:
+            - arm32v6
+            - arm32v7
+            - aarch64
+            - amd64
+
+      steps:
+        - uses: actions/checkout@v1.0.0
+
+        - name: Register self-compiled qemu
+          if: matrix.arch != 'amd64'
+          run: docker run --rm --privileged meedamian/simple-qemu:v4.1.0-${{matrix.arch}} -p yes
+
+        - name: Alter Dockerfile to be arch-specific
+          if: matrix.arch != 'amd64'
+          run: |
+            if [[ "${{ matrix.arch }}" == "aarch64" ]]; then
+              sed -ie 's/FROM alpine/FROM arm64v8\/alpine/g' 0.16/Dockerfile
+              exit 0
+            fi
+
+            if [[ "${{ matrix.arch }}" == arm32* ]]; then
+              sed -ie "s/FROM alpine/FROM ${{ matrix.arch }}\/alpine/g" 0.16/Dockerfile
+              exit 0
+            fi
+
+            exit 1
+
+        - name: Build Berkeleydb stage
+          run: >
+            DOCKER_BUILDKIT=1 docker build 0.16/
+            --tag       berkeleydb
+            --target    berkeleydb
+            --file      0.16/Dockerfile
+
+        - name: Save BDB image to a .tgz file
+          run:  docker save berkeleydb | gzip > "berkeleydb-${{ matrix.arch }}.tgz"
+
+        - name: Print sha256sum of BDB image
+          run: sha256sum "berkeleydb-${{ matrix.arch }}.tgz"
+
+        - name: Upload BDB image as artifact
+          uses: actions/upload-artifact@v1.0.0
+          with:
+            path: "./berkeleydb-${{ matrix.arch }}.tgz"
+
+
   build:
     name: build
     runs-on: ubuntu-latest
     strategy:
       matrix:
         arch:
-#          - arm
-#          - aarch64
+          - arm32v6
+          - arm32v7
+          - aarch64
           - amd64
-        bench:
-          - true
-          - false
 
     steps:
-      - uses: actions/checkout@master
+      - uses: actions/checkout@v1.0.0
+
+      - name: Download all build artifacts
+        uses: actions/download-artifact@v1.0.0
+        with:
+          name: "berkeleydb-${{ matrix.arch }}.tgz"
+
+      - name: Print sha256sum of downloaded BDB
+        run: sha256sum "./berkeleydb-${{ matrix.arch }}.tgz"
+
+      - name: Load BDB image locally
+        run: docker load -i "./berkeleydb-${{ matrix.arch }}.tgz"
 
       - name: Register self-compiled qemu
-        if: matrix.arch != 'amd64' && matrix.bench == true
+        if: matrix.arch != 'amd64'
         run: docker run --rm --privileged meedamian/simple-qemu:v4.1.0-${{matrix.arch}} -p yes
 
       - name: Change Dockerfile to use arch-specific base images
-        if: matrix.arch != 'amd64' && matrix.bench == true
+        if: matrix.arch != 'amd64'
         run: |
           if [[ "${{ matrix.arch }}" == "aarch64" ]]; then
             sed -ie 's/FROM alpine/FROM arm64v8\/alpine/g' 0.16/Dockerfile
             exit 0
           fi
 
-          if [[ "${{ matrix.arch }}" == "arm" ]]; then
-            sed -ie 's/FROM alpine/FROM arm32v6\/alpine/g' 0.16/Dockerfile
+          if [[ "${{ matrix.arch }}" == arm32* ]]; then
+            sed -ie "s/FROM alpine/FROM ${{ matrix.arch }}\/alpine/g" 0.16/Dockerfile
             exit 0
           fi
 
-      - name: Build Docker image
-        if: matrix.arch == 'amd64' || matrix.bench == true
-        run: |
-          if [[ "${{ matrix.bench }}" == "true" ]]; then
-            sed -i '/--disable-bench/d' 0.16/Dockerfile
-          fi
+          exit 1
 
-          docker build  0.16/  -f 0.16/Dockerfile
+      - name: Build Docker image
+        if: matrix.arch == 'amd64'
+        run: DOCKER_BUILDKIT=1 docker build 0.16/ --file 0.16/Dockerfile
 
