@@ -17,16 +17,19 @@ jobs:
           - arm
           - aarch64
           - amd64
+        bench:
+          - true
+          - false
 
     steps:
       - uses: actions/checkout@master
 
       - name: Register self-compiled qemu
-        if: matrix.arch != 'amd64'
+        if: matrix.arch != 'amd64' && matrix.bench == true
         run: docker run --rm --privileged meedamian/simple-qemu:v4.1.0-${{matrix.arch}} -p yes
 
       - name: Change Dockerfile to use arch-specific base images
-        if: matrix.arch != 'amd64'
+        if: matrix.arch != 'amd64' && matrix.bench == true
         run: |
           if [[ "${{ matrix.arch }}" == "aarch64" ]]; then
             sed -ie 's/FROM alpine/FROM arm64v8\/alpine/g' 0.16/Dockerfile
@@ -39,5 +42,11 @@ jobs:
           fi
 
       - name: Build Docker image
-        run: docker build  0.16/  -f 0.16/Dockerfile
+        if: matrix.arch == 'amd64' || matrix.bench == true
+        run: |
+          if [[ "${matrix.bench}" == "true" ]]; then
+            sed -i '/--disable-bench/d' 0.16/Dockerfile
+          fi
+
+          docker build  0.16/  -f 0.16/Dockerfile
 
