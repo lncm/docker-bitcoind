@@ -14,8 +14,7 @@ jobs:
     strategy:
       matrix:
         arch:
-          - arm32v6
-          - arm32v7
+          - arm
           - aarch64
           - amd64
 
@@ -34,8 +33,8 @@ jobs:
             exit 0
           fi
 
-          if [[ "${{ matrix.arch }}" == arm32* ]]; then
-            sed -ie "s/FROM alpine/FROM ${{ matrix.arch }}\/alpine/g" 0.16/Dockerfile
+          if [[ "${{ matrix.arch }}" == "arm" ]]; then
+            sed -ie "s/FROM alpine/FROM arm32v7\/alpine/g" 0.16/Dockerfile
             exit 0
           fi
 
@@ -66,8 +65,7 @@ jobs:
     strategy:
       matrix:
         arch:
-          - arm32v6
-          - arm32v7
+          - arm
           - aarch64
           - amd64
 
@@ -97,8 +95,8 @@ jobs:
             exit 0
           fi
 
-          if [[ "${{ matrix.arch }}" == arm32* ]]; then
-            sed -ie "s/FROM alpine/FROM ${{ matrix.arch }}\/alpine/g" 0.16/Dockerfile
+          if [[ "${{ matrix.arch }}" == "arm" ]]; then
+            sed -ie "s/FROM alpine/FROM arm32v7\/alpine/g" 0.16/Dockerfile
             exit 0
           fi
 
