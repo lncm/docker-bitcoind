@@ -73,7 +73,7 @@ RUN sed -i '/AX_PROG_CC_FOR_BUILD/a\AR_FLAGS=cr' src/secp256k1/configure.ac
 RUN sed -i s:sys/fcntl.h:fcntl.h: src/compat.h
 
 RUN ./autogen.sh
-RUN ./configure LDFLAGS=-L$(ls -d /opt/db*)/lib/ CPPFLAGS=-I$(ls -d /opt/db*)/include/ \
+RUN ./configure LDFLAGS=-L/opt/db4/lib/ CPPFLAGS=-I/opt/db4/include/ \
     --prefix=${BITCOIN_PREFIX} \
     --mandir=/usr/share/man \
     --disable-ccache \
