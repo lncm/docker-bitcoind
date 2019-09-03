@@ -42,5 +42,4 @@ jobs:
         run: >
           DOCKER_BUILDKIT=1 docker build 0.16/
           --file      0.16/Dockerfile
-          --platform  linux/${{ matrix.arch }}
 
