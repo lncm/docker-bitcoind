@@ -34,13 +34,13 @@ jobs:
       - name: Change Dockerfile to use arch-specific base images
         if: matrix.arch != 'amd64'
         run: >
-          sed -i 0.16/Dockerfile \
-            --expression "s/\(FROM\) \(alpine\)/\1 ${{ matrix.arch }}\/\2/g" \
-            --expression "s/db-4.8.30.NC/&-${{ matrix.arch }}/g"
+          sed -i 0.16/Dockerfile
+          --expression "s/\(FROM\) \(alpine\)/\1 ${{ matrix.arch }}\/\2/g"
+          --expression "s/db-4.8.30.NC/&-${{ matrix.arch }}/g"
 
       - name: Build Docker image
         run: >
           DOCKER_BUILDKIT=1 docker build 0.16/
-            --file      0.16/Dockerfile
-            --platform  linux/${{ matrix.arch }}
+          --file      0.16/Dockerfile
+          --platform  linux/${{ matrix.arch }}
 
