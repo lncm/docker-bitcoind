@@ -15,8 +15,13 @@ jobs:
       matrix:
         arch:
           - arm32v7
-          - arm64v8
+          - arm64
           - amd64
+
+        subver:
+          - '0.16'
+#          - '0.17'
+#          - '0.18'
 
     steps:
       - uses: actions/checkout@v1.0.0
@@ -27,19 +32,22 @@ jobs:
 
         # This step is only run when `qemu` emulation is necessary.  `sed` command here prepares `Dockerfile` so that
         #   emulated architecture is always used instead of host's native one.
-        # First `--expression` matches two consecutive words "FROM alpine", captures them as `\1`, and `\2` respectively,
-        #   and inserts "${{matrix.arch}}/" between them. Note that `(`, `)`, `/` must we escaped.
-        # Second `--expression` matches BDB version, and appends "-${{ matrix.arch }}" to it.
+        # First `-e` (aka `--expression`) matches two consecutive words "FROM alpine", captures them as `\1`, and `\2`
+        #   respectively, and inserts "${{matrix.arch}}/" between them. Note that `(`, `)`, `/` must be escaped.
+        # Second `-e` matches BDB version, and appends "-${{matrix.arch}}" to it.
         #   Note that `&` represents match.
       - name: Change Dockerfile to use arch-specific base images
         if: matrix.arch != 'amd64'
-        run: >
-          sed -i 0.16/Dockerfile
-          --expression "s/\(FROM\) \(alpine\)/\1 ${{ matrix.arch }}\/\2/g"
-          --expression "s/db-4.8.30.NC/&-${{ matrix.arch }}/g"
+        run: |
+          CPU=${{matrix.arch}}
+          if [[ "${CPU}" == "arm64" ]]; then
+            CPU="arm64v8"
+          fi
+
+          sed -i ${{matrix.subver}}/Dockerfile \
+            -e "s|^FROM alpine|FROM $CPU/alpine|g" \
+            -e "s|db-4.8.30.NC|&-${{matrix.arch}}|g"
 
       - name: Build Docker image
-        run: >
-          DOCKER_BUILDKIT=1 docker build 0.16/
-          --file      0.16/Dockerfile
+        run: DOCKER_BUILDKIT=1 docker build ${{matrix.subver}}/
 
