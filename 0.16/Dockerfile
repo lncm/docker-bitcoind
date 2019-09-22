@@ -1,8 +1,10 @@
-FROM alpine:3.10 AS bitcoin-core
+ARG variant=quick
+
+FROM alpine:3.10 AS bitcoin-core-quick
 
 # Use APK repos over HTTPS. See: https://github.com/gliderlabs/docker-alpine/issues/184
 RUN sed -i 's|http://dl-cdn.alpinelinux.org|https://alpine.global.ssl.fastly.net|g' /etc/apk/repositories && \
-    apk add --no-cache --update \
+    apk add --no-cache \
         autoconf \
         automake \
         boost-dev \
@@ -83,7 +85,17 @@ RUN ./configure LDFLAGS=-L/opt/db4/lib/ CPPFLAGS=-I/opt/db4/include/ \
     --with-daemon
 RUN make
 
+
+
+
+FROM bitcoin-core-quick AS bitcoin-core-checked
+
 RUN make check
+
+
+
+FROM bitcoin-core-${variant} AS bitcoin-core
+
 RUN make install
 
 RUN strip ${BITCOIN_PREFIX}/bin/bitcoin-cli
@@ -93,6 +105,7 @@ RUN strip ${BITCOIN_PREFIX}/lib/libbitcoinconsensus.a
 RUN strip ${BITCOIN_PREFIX}/lib/libbitcoinconsensus.so.0.0.0
 
 
+
 # Build stage for compiled artifacts
 FROM alpine:3.10 AS final
 
@@ -100,8 +113,8 @@ LABEL maintainer.0="nolim1t (@nolim1t)" \
       maintainer.1="Damian Mee (@meeDamian)"
 
 # Use APK repos over HTTPS. See: https://github.com/gliderlabs/docker-alpine/issues/184
-RUN sed -i 's/http\:\/\/dl-cdn.alpinelinux.org/https\:\/\/alpine.global.ssl.fastly.net/g' /etc/apk/repositories
-RUN apk --no-cache --update \
+RUN sed -i 's|http://dl-cdn.alpinelinux.org|https://alpine.global.ssl.fastly.net|g' /etc/apk/repositories
+RUN apk --no-cache \
     add \
     boost \
     boost-program_options \
