@@ -49,5 +49,10 @@ jobs:
             -e "s|db-4.8.30.NC|&-${{matrix.arch}}|g"
 
       - name: Build Docker image
+        if: matrix.arch == 'amd64'
+        run: DOCKER_BUILDKIT=1 docker build --build-arg "variant=checked" ${{matrix.subver}}/
+
+      - name: Build Docker image (quick)
+        if: matrix.arch != 'amd64'
         run: DOCKER_BUILDKIT=1 docker build ${{matrix.subver}}/
 
