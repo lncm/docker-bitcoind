@@ -1,28 +1,30 @@
-# Build stage for Bitcoin Core
-FROM alpine:3.10 AS bitcoin-core
+ARG variant=quick
 
-# Fetch already built berkeleydb
-COPY --from=lncm/berkeleydb:db-4.8.30.NC /opt /
+FROM alpine:3.10 AS bitcoin-core-base
 
 # Use APK repos over HTTPS. See: https://github.com/gliderlabs/docker-alpine/issues/184
-RUN sed -i 's/http\:\/\/dl-cdn.alpinelinux.org/https\:\/\/alpine.global.ssl.fastly.net/g' /etc/apk/repositories
+RUN sed -i 's|http://dl-cdn.alpinelinux.org|https://alpine.global.ssl.fastly.net|g' /etc/apk/repositories && \
+    apk add --no-cache \
+        autoconf \
+        automake \
+        boost-dev \
+        build-base \
+        chrpath \
+        file \
+        gnupg \
+        libevent-dev \
+        libressl \
+        libressl-dev \
+        libtool \
+        linux-headers \
+        protobuf-dev \
+        zeromq-dev
 
-# Install packages necessary to build Bitcoind
-RUN apk add --no-cache --update \
-    autoconf \
-    automake \
-    boost-dev \
-    build-base \
-    chrpath \
-    file \
-    gnupg \
-    libevent-dev \
-    libressl \
-    libressl-dev \
-    libtool \
-    linux-headers \
-    protobuf-dev \
-    zeromq-dev
+# Fetch already built berkeleydb
+COPY --from=meedamian/berkeleydb:db-4.8.30.NC  /opt/  /opt/
+
+# Temporarily change shell to bash, so that arrays can be used
+SHELL ["/bin/bash", "-c"]
 
 RUN KEYS=( \
         90C8019E36C2E964 \
@@ -35,14 +37,17 @@ RUN KEYS=( \
   wait -n && \
   gpg --list-keys
 
+# Restore default shell
+SHELL ["/bin/sh", "-c"]
+
 ENV BITCOIN_VERSION=0.18.1
 ENV BITCOIN_PREFIX=/opt/bitcoin-${BITCOIN_VERSION}
 
 # Download checksums (intentionally different source than source code)
-RUN wget https://bitcoincore.org/bin/bitcoin-core-${BITCOIN_VERSION}/SHA256SUMS.asc
+RUN wget "https://bitcoincore.org/bin/bitcoin-core-${BITCOIN_VERSION}/SHA256SUMS.asc"
 
 # Download source code (intentionally different source than checksums)
-RUN wget https://bitcoin.org/bin/bitcoin-core-${BITCOIN_VERSION}/bitcoin-${BITCOIN_VERSION}.tar.gz
+RUN wget "https://bitcoin.org/bin/bitcoin-core-${BITCOIN_VERSION}/bitcoin-${BITCOIN_VERSION}.tar.gz"
 
 # Verify that hashes are signed with the previously imported key
 RUN gpg --verify SHA256SUMS.asc
@@ -51,9 +56,10 @@ RUN gpg --verify SHA256SUMS.asc
 RUN grep " bitcoin-${BITCOIN_VERSION}.tar.gz\$" SHA256SUMS.asc | sha256sum -c -
 
 # Extract
-RUN tar -xzf *.tar.gz
+RUN tar -xzf "bitcoin-${BITCOIN_VERSION}.tar.gz" && \
+    rm -f "bitcoin-${BITCOIN_VERSION}.tar.gz"
 
-# Change to the extraced directory
+# Change to the extracted directory
 WORKDIR /bitcoin-${BITCOIN_VERSION}
 
 # Disable test that fails on Alpine for unrelated reasons: missing locale.  Not important.
@@ -69,7 +75,29 @@ RUN sed -i '/AX_PROG_CC_FOR_BUILD/a\AR_FLAGS=cr' src/secp256k1/configure.ac
 RUN sed -i s:sys/fcntl.h:fcntl.h: src/compat.h
 
 RUN ./autogen.sh
-RUN ./configure LDFLAGS=-L$(ls -d /opt/db*)/lib/ CPPFLAGS=-I$(ls -d /opt/db*)/include/ \
+
+
+
+
+FROM bitcoin-core-base AS bitcoin-core-quick
+
+RUN ./configure LDFLAGS=-L/opt/db4/lib/ CPPFLAGS=-I/opt/db4/include/ \
+    --prefix=${BITCOIN_PREFIX} \
+    --mandir=/usr/share/man \
+    --disable-ccache \
+    --with-gui=no \
+    --with-utils \
+    --with-libs \
+    --with-daemon \
+    --disable-tests \
+    --disable-bench
+RUN make
+
+
+
+FROM bitcoin-core-base AS bitcoin-core-checked
+
+RUN ./configure LDFLAGS=-L/opt/db4/lib/ CPPFLAGS=-I/opt/db4/include/ \
     --prefix=${BITCOIN_PREFIX} \
     --mandir=/usr/share/man \
     --disable-ccache \
@@ -78,8 +106,12 @@ RUN ./configure LDFLAGS=-L$(ls -d /opt/db*)/lib/ CPPFLAGS=-I$(ls -d /opt/db*)/in
     --with-libs \
     --with-daemon
 RUN make
-
 RUN make check
+
+
+
+FROM bitcoin-core-${variant} AS bitcoin-core
+
 RUN make install
 
 RUN strip ${BITCOIN_PREFIX}/bin/bitcoin-cli
@@ -89,6 +121,7 @@ RUN strip ${BITCOIN_PREFIX}/lib/libbitcoinconsensus.a
 RUN strip ${BITCOIN_PREFIX}/lib/libbitcoinconsensus.so.0.0.0
 
 
+
 # Build stage for compiled artifacts
 FROM alpine:3.10 AS final
 
@@ -96,8 +129,8 @@ LABEL maintainer.0="nolim1t (@nolim1t)" \
       maintainer.1="Damian Mee (@meeDamian)"
 
 # Use APK repos over HTTPS. See: https://github.com/gliderlabs/docker-alpine/issues/184
-RUN sed -i 's/http\:\/\/dl-cdn.alpinelinux.org/https\:\/\/alpine.global.ssl.fastly.net/g' /etc/apk/repositories
-RUN apk --no-cache --update \
+RUN sed -i 's|http://dl-cdn.alpinelinux.org|https://alpine.global.ssl.fastly.net|g' /etc/apk/repositories
+RUN apk --no-cache \
     add \
     boost \
     boost-program_options \
@@ -112,7 +145,7 @@ ENV PATH=${BITCOIN_PREFIX}/bin:$PATH
 
 VOLUME /root/.bitcoin
 
-COPY --from=bitcoin-core /opt /
+COPY --from=bitcoin-core /opt /opt
 
 # REST interface
 EXPOSE 8080
