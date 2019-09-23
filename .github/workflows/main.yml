@@ -30,9 +30,11 @@ jobs:
     steps:
       - uses: actions/checkout@v1.0.0
 
+      # NOTE: qemu v3.1.1 used instead of currently newest v4.1.0, because v4 is **much** slower for aarch64, see:
+      #   https://github.com/meeDamian/docker-berkeleydb/runs/232390723
       - name: Register self-compiled qemu
         if: matrix.arch != 'amd64'
-        run: docker run --rm --privileged meedamian/simple-qemu:v4.1.0-${{matrix.arch}} -p yes
+        run: docker run --rm --privileged meedamian/simple-qemu:v3.1.1-${{matrix.arch}} -p yes
 
         # This step is only run when `qemu` emulation is necessary.  `sed` command here prepares `Dockerfile` so that
         #   emulated architecture is always used instead of host's native one.
