@@ -1,6 +1,4 @@
-ARG variant=quick
-
-FROM alpine:3.10 AS bitcoin-core-base
+FROM alpine:3.10 AS bitcoin-core
 
 # Use APK repos over HTTPS. See: https://github.com/gliderlabs/docker-alpine/issues/184
 RUN sed -i 's|http://dl-cdn.alpinelinux.org|https://alpine.global.ssl.fastly.net|g' /etc/apk/repositories && \
@@ -75,28 +73,6 @@ RUN sed -i '/AX_PROG_CC_FOR_BUILD/a\AR_FLAGS=cr' src/secp256k1/configure.ac
 RUN sed -i s:sys/fcntl.h:fcntl.h: src/compat.h
 
 RUN ./autogen.sh
-
-RUN printf "Available proc units: %s\n" "$(nproc)"
-
-
-FROM bitcoin-core-base AS bitcoin-core-quick
-
-RUN ./configure LDFLAGS=-L/opt/db4/lib/ CPPFLAGS=-I/opt/db4/include/ \
-    --prefix=${BITCOIN_PREFIX} \
-    --mandir=/usr/share/man \
-    --disable-ccache \
-    --with-gui=no \
-    --with-utils \
-    --with-libs \
-    --with-daemon \
-    --disable-tests \
-    --disable-bench
-RUN make -j$(nproc)
-
-
-
-FROM bitcoin-core-base AS bitcoin-core-checked
-
 RUN ./configure LDFLAGS=-L/opt/db4/lib/ CPPFLAGS=-I/opt/db4/include/ \
     --prefix=${BITCOIN_PREFIX} \
     --mandir=/usr/share/man \
@@ -107,11 +83,6 @@ RUN ./configure LDFLAGS=-L/opt/db4/lib/ CPPFLAGS=-I/opt/db4/include/ \
     --with-daemon
 RUN make -j$(nproc)
 RUN make -j$(nproc) check
-
-
-
-FROM bitcoin-core-${variant} AS bitcoin-core
-
 RUN make install
 
 RUN strip ${BITCOIN_PREFIX}/bin/bitcoin-cli
