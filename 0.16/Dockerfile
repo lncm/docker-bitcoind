@@ -76,6 +76,8 @@ RUN sed -i s:sys/fcntl.h:fcntl.h: src/compat.h
 
 RUN ./autogen.sh
 
+RUN printf "Available proc units: %s\n" "$(nproc)"
+
 
 
 
@@ -91,7 +93,7 @@ RUN ./configure LDFLAGS=-L/opt/db4/lib/ CPPFLAGS=-I/opt/db4/include/ \
     --with-daemon \
     --disable-tests \
     --disable-bench
-RUN make
+RUN make -j$(nproc)
 
 
 
@@ -105,8 +107,8 @@ RUN ./configure LDFLAGS=-L/opt/db4/lib/ CPPFLAGS=-I/opt/db4/include/ \
     --with-utils \
     --with-libs \
     --with-daemon
-RUN make
-RUN make check
+RUN make -j$(nproc)
+RUN make -j$(nproc) check
 
 
 
