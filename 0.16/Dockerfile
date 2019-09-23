@@ -21,22 +21,10 @@ RUN sed -i 's|http://dl-cdn.alpinelinux.org|https://alpine.global.ssl.fastly.net
 # Fetch already built berkeleydb
 COPY --from=meedamian/berkeleydb:db-4.8.30.NC  /opt/  /opt/
 
-# Temporarily change shell to bash, so that arrays can be used
-SHELL ["/bin/bash", "-c"]
+ENV KEY 01EA5486DE18A882D4C2684590C8019E36C2E964
 
-RUN KEYS=( \
-        90C8019E36C2E964 \
-    ); \
-  (gpg --keyserver pgp.mit.edu --recv-keys ${KEYS[@]}; echo "pgp.mit.edu done") &  \
-  sleep 1s; \
-  (gpg --keyserver keyserver.pgp.com --recv-keys ${KEYS[@]}; echo "keyserver.pgp.com done") &  \
-  (gpg --keyserver ha.pool.sks-keyservers.net --recv-keys ${KEYS[@]}; echo "ha.pool.sks-keyservers.net") &  \
-  (gpg --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys ${KEYS[@]}; echo "hkp://p80.pool.sks-keyservers.net:80") &  \
-  wait -n && \
-  gpg --list-keys
-
-# Restore default shell
-SHELL ["/bin/sh", "-c"]
+COPY gpg-key.sh /tmp/
+RUN chmod +x /tmp/gpg-key.sh && /tmp/gpg-key.sh "${KEY}" && gpg --list-keys
 
 ENV BITCOIN_VERSION=0.16.3
 ENV BITCOIN_PREFIX=/opt/bitcoin-${BITCOIN_VERSION}
