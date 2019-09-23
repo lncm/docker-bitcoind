@@ -38,8 +38,8 @@ jobs:
 
         # This step is only run when `qemu` emulation is necessary.  `sed` command here prepares `Dockerfile` so that
         #   emulated architecture is always used instead of host's native one.
-        # First `-e` (aka `--expression`) matches two consecutive words "FROM alpine", captures them as `\1`, and `\2`
-        #   respectively, and inserts "${{matrix.arch}}/" between them. Note that `(`, `)`, `/` must be escaped.
+        # First `-e` (aka `--expression`) matches all occurrences of two consecutive words "FROM alpine", and
+        #   replaces them with  "FROM $CPU/alpine", where $CPU is ${{matrix.arch}}, converted to Alpine tags format.
         # Second `-e` matches BDB version, and appends "-${{matrix.arch}}" to it.
         #   Note that `&` represents match.
       - name: Change Dockerfile to use arch-specific base images
