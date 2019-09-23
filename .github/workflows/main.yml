@@ -12,6 +12,7 @@ jobs:
     name: Build Bitcoind
     runs-on: ubuntu-18.04
     strategy:
+      fail-fast: false
       matrix:
         arch:
           - arm32v7
