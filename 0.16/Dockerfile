@@ -55,11 +55,6 @@ RUN tar -xzf "bitcoin-${BITCOIN_VERSION}.tar.gz" && \
 # Change to the extracted directory
 WORKDIR /bitcoin-${BITCOIN_VERSION}
 
-# Disable test that fails on Alpine for unrelated reasons: missing locale.  Not important.
-#   https://github.com/bitcoin/bitcoin/issues/14948
-#COPY skip-fs-test-of-utf8.patch .
-#RUN patch -p0 < skip-fs-test-of-utf8.patch
-
 # ???
 RUN sed -i '/AC_PREREQ/a\AR_FLAGS=cr' src/univalue/configure.ac
 # ???
