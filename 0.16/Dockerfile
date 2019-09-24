@@ -23,8 +23,15 @@ COPY --from=meedamian/berkeleydb:db-4.8.30.NC  /opt/  /opt/
 
 ENV KEY 01EA5486DE18A882D4C2684590C8019E36C2E964
 
-COPY gpg-key.sh /tmp/
-RUN chmod +x /tmp/gpg-key.sh && /tmp/gpg-key.sh "${KEY}" && gpg --list-keys
+# Try to fetch key from keyservers listed below.  On first success terminate with `exit 0`.  If loop is not interrupted,
+#   it means all attempts failed, and `exit 1` is called.
+RUN for SRV in hkp://p80.pool.sks-keyservers.net:80  ha.pool.sks-keyservers.net  keyserver.pgp.com  pgp.mit.edu; do \
+        timeout 9s  gpg  --keyserver "${SRV}"  --recv-keys "${KEY}"  >/dev/null 2<&1 && \
+            { echo "OK:  ${SRV}" && exit 0; } || \
+            { echo "ERR: ${SRV} fail=$?"; } ; \
+    done && exit 1
+
+RUN gpg --list-keys
 
 ENV BITCOIN_VERSION=0.16.3
 ENV BITCOIN_PREFIX=/opt/bitcoin-${BITCOIN_VERSION}
@@ -84,8 +91,7 @@ RUN strip ${BITCOIN_PREFIX}/lib/libbitcoinconsensus.so.0.0.0
 # Build stage for compiled artifacts
 FROM alpine:3.10 AS final
 
-LABEL maintainer.0="nolim1t (@nolim1t)" \
-      maintainer.1="Damian Mee (@meeDamian)"
+LABEL maintainer="Damian Mee (@meeDamian)"
 
 # Use APK repos over HTTPS. See: https://github.com/gliderlabs/docker-alpine/issues/184
 RUN sed -i 's|http://dl-cdn.alpinelinux.org|https://alpine.global.ssl.fastly.net|g' /etc/apk/repositories
