@@ -1,68 +1,87 @@
-# Build stage for Bitcoin Core
-FROM alpine:3.9 AS bitcoin-core
-
-# fetch already built berkeleydb
-COPY --from=lncm/berkeleydb:db-4.8.30.NC /opt /opt
+FROM alpine:3.10 AS bitcoin-core
 
 # Use APK repos over HTTPS. See: https://github.com/gliderlabs/docker-alpine/issues/184
-RUN sed -i 's/http\:\/\/dl-cdn.alpinelinux.org/https\:\/\/alpine.global.ssl.fastly.net/g' /etc/apk/repositories
+RUN sed -i 's|http://dl-cdn.alpinelinux.org|https://alpine.global.ssl.fastly.net|g' /etc/apk/repositories && \
+    apk add --no-cache \
+        autoconf \
+        automake \
+        boost-dev \
+        build-base \
+        chrpath \
+        file \
+        gnupg \
+        libevent-dev \
+        libressl \
+        libressl-dev \
+        libtool \
+        linux-headers \
+        protobuf-dev \
+        zeromq-dev
 
-# Install packages necessary to build Bitcoind
-RUN apk add --no-cache --update \
-    autoconf \
-    automake \
-    boost-dev \
-    build-base \
-    chrpath \
-    file \
-    gnupg \
-    libevent-dev \
-    libressl \
-    libressl-dev \
-    libtool \
-    linux-headers \
-    protobuf-dev \
-    zeromq-dev
+# Fetch already built berkeleydb
+COPY --from=meedamian/berkeleydb:db-4.8.30.NC  /opt/  /opt/
 
-RUN KEYS=( \
-        90C8019E36C2E964 \
-    ); \
-  (gpg --keyserver pgp.mit.edu --recv-keys ${KEYS[@]}; echo "pgp.mit.edu done") &  \
-  sleep 1s; \
-  (gpg --keyserver keyserver.pgp.com --recv-keys ${KEYS[@]}; echo "keyserver.pgp.com done") &  \
-  (gpg --keyserver ha.pool.sks-keyservers.net --recv-keys ${KEYS[@]}; echo "ha.pool.sks-keyservers.net") &  \
-  (gpg --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys ${KEYS[@]}; echo "hkp://p80.pool.sks-keyservers.net:80") &  \
-  wait -n && \
-  gpg --list-keys
+ENV KEY 01EA5486DE18A882D4C2684590C8019E36C2E964
 
+# Try to fetch key from keyservers listed below.  On first success terminate with `exit 0`.  If loop is not interrupted,
+#   it means all attempts failed, and `exit 1` is called.
+RUN for SRV in hkp://p80.pool.sks-keyservers.net:80  ha.pool.sks-keyservers.net  keyserver.pgp.com  pgp.mit.edu; do \
+        timeout 9s  gpg  --keyserver "${SRV}"  --recv-keys "${KEY}"  >/dev/null 2<&1 && \
+            { echo "OK:  ${SRV}" && exit 0; } || \
+            { echo "ERR: ${SRV} fail=$?"; } ; \
+    done && exit 1
+
+RUN gpg --list-keys
 
 ENV BITCOIN_VERSION=0.17.1
 ENV BITCOIN_PREFIX=/opt/bitcoin-${BITCOIN_VERSION}
 
-RUN wget https://bitcoin.org/bin/bitcoin-core-${BITCOIN_VERSION}/SHA256SUMS.asc
-RUN wget https://bitcoin.org/bin/bitcoin-core-${BITCOIN_VERSION}/bitcoin-${BITCOIN_VERSION}.tar.gz
-RUN gpg --verify SHA256SUMS.asc
-RUN grep " bitcoin-${BITCOIN_VERSION}.tar.gz\$" SHA256SUMS.asc | sha256sum -c -
-RUN tar -xzf *.tar.gz
+# Download checksums (intentionally different source than source code)
+RUN wget "https://bitcoincore.org/bin/bitcoin-core-${BITCOIN_VERSION}/SHA256SUMS.asc"
 
+# Download source code (intentionally different source than checksums)
+RUN wget "https://bitcoin.org/bin/bitcoin-core-${BITCOIN_VERSION}/bitcoin-${BITCOIN_VERSION}.tar.gz"
+
+# Verify that hashes are signed with the previously imported key
+RUN gpg --verify SHA256SUMS.asc
+
+# Verify that downloaded source-code archive has exactly the hash that's provided
+RUN grep " bitcoin-${BITCOIN_VERSION}.tar.gz\$" SHA256SUMS.asc | sha256sum -c -
+
+# Extract
+RUN tar -xzf "bitcoin-${BITCOIN_VERSION}.tar.gz" && \
+    rm -f "bitcoin-${BITCOIN_VERSION}.tar.gz"
+
+# Change to the extracted directory
 WORKDIR /bitcoin-${BITCOIN_VERSION}
 
+# ???
 RUN sed -i '/AC_PREREQ/a\AR_FLAGS=cr' src/univalue/configure.ac
+# ???
 RUN sed -i '/AX_PROG_CC_FOR_BUILD/a\AR_FLAGS=cr' src/secp256k1/configure.ac
+# ???
 RUN sed -i s:sys/fcntl.h:fcntl.h: src/compat.h
+
 RUN ./autogen.sh
-RUN ./configure LDFLAGS=-L`ls -d /opt/db*`/lib/ CPPFLAGS=-I`ls -d /opt/db*`/include/ \
+RUN ./configure LDFLAGS=-L/opt/db4/lib/ CPPFLAGS=-I/opt/db4/include/ \
     --prefix=${BITCOIN_PREFIX} \
     --mandir=/usr/share/man \
-    --disable-tests \
-    --disable-bench \
     --disable-ccache \
     --with-gui=no \
     --with-utils \
     --with-libs \
     --with-daemon
-RUN make
+
+# `-j3` used instead of `-j$(nproc)`, based on better results here:
+#   https://github.com/meeDamian/docker-bitcoind/commit/40fe90c026399f2d5c2de35535006572e14d24db/checks
+RUN make -j3
+RUN make -j3 check
 RUN make install
+
+# TODO: investigate contents and remove
+RUN ls -l ${BITCOIN_PREFIX}/bin/
+RUN ls -l ${BITCOIN_PREFIX}/lib/
+
 RUN strip ${BITCOIN_PREFIX}/bin/bitcoin-cli
 RUN strip ${BITCOIN_PREFIX}/bin/bitcoin-tx
 RUN strip ${BITCOIN_PREFIX}/bin/bitcoind
@@ -70,21 +89,21 @@ RUN strip ${BITCOIN_PREFIX}/lib/libbitcoinconsensus.a
 RUN strip ${BITCOIN_PREFIX}/lib/libbitcoinconsensus.so.0.0.0
 
 
-# Build stage for compiled artifacts
-FROM alpine:3.9 AS final
 
-LABEL maintainer.0="nolim1t (@nolim1t)" \
-      maintainer.1="Damian Mee (@meeDamian)"
+# Build stage for compiled artifacts
+FROM alpine:3.10 AS final
+
+LABEL maintainer="Damian Mee (@meeDamian)"
 
 # Use APK repos over HTTPS. See: https://github.com/gliderlabs/docker-alpine/issues/184
-RUN sed -i 's/http\:\/\/dl-cdn.alpinelinux.org/https\:\/\/alpine.global.ssl.fastly.net/g' /etc/apk/repositories
-RUN apk --no-cache add \
-  boost \
-  boost-program_options \
-  libevent \
-  libressl \
-  libzmq \
-  su-exec
+RUN sed -i 's|http://dl-cdn.alpinelinux.org|https://alpine.global.ssl.fastly.net|g' /etc/apk/repositories
+RUN apk add --no-cache \
+    boost \
+    boost-program_options \
+    libevent \
+    libressl \
+    libzmq \
+    su-exec
 
 ENV BITCOIN_VERSION=0.17.1
 ENV BITCOIN_PREFIX=/opt/bitcoin-${BITCOIN_VERSION}

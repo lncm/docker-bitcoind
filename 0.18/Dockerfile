@@ -76,9 +76,15 @@ RUN ./configure LDFLAGS=-L/opt/db4/lib/ CPPFLAGS=-I/opt/db4/include/ \
     --with-utils \
     --with-libs \
     --with-daemon
-RUN make -j$(nproc)
-RUN make -j$(nproc) check
+
+# `-j3` used instead of `-j$(nproc)`, based on better results here:
+#   https://github.com/meeDamian/docker-bitcoind/commit/40fe90c026399f2d5c2de35535006572e14d24db/checks
+RUN make -j3
+RUN make -j3 check
 RUN make install
+
+RUN ls -l ${BITCOIN_PREFIX}/bin/
+RUN ls -l ${BITCOIN_PREFIX}/lib/
 
 RUN strip ${BITCOIN_PREFIX}/bin/bitcoin-cli
 RUN strip ${BITCOIN_PREFIX}/bin/bitcoin-tx
@@ -95,8 +101,7 @@ LABEL maintainer="Damian Mee (@meeDamian)"
 
 # Use APK repos over HTTPS. See: https://github.com/gliderlabs/docker-alpine/issues/184
 RUN sed -i 's|http://dl-cdn.alpinelinux.org|https://alpine.global.ssl.fastly.net|g' /etc/apk/repositories
-RUN apk --no-cache \
-    add \
+RUN apk add --no-cache \
     boost \
     boost-program_options \
     libevent \

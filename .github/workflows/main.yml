@@ -5,11 +5,6 @@ on:
     branches:
       - master
 
-#on:
-#  push:
-#    tags:
-#      - '*'
-
 jobs:
   build:
     name: Build Bitcoind
@@ -24,27 +19,24 @@ jobs:
 
         subver:
           - '0.16'
-#          - '0.17'
+          - '0.17'
           - '0.18'
-        qemu:
-          - v3.1.1
-          - v4.1.0
 
     steps:
       - uses: actions/checkout@v1.0.0
 
       # NOTE: qemu v3.1.1 used instead of currently newest v4.1.0, because v4 is **much** slower for aarch64, see:
-      #   https://github.com/meeDamian/docker-berkeleydb/runs/232390723
+      #   https://github.com/meeDamian/docker-berkeleydb/commit/9e87d11314c2522726497f0c6059e61a31298e7f/checks
       - name: Register self-compiled qemu
         if: matrix.arch != 'amd64'
-        run: docker run --rm --privileged meedamian/simple-qemu:${{matrix.qemu}}-${{matrix.arch}} -p yes
+        run: docker run --rm --privileged meedamian/simple-qemu:v3.1.1-${{matrix.arch}} -p yes
 
-        # This step is only run when `qemu` emulation is necessary.  `sed` command here prepares `Dockerfile` so that
-        #   emulated architecture is always used instead of host's native one.
-        # First `-e` (aka `--expression`) matches all occurrences of two consecutive words "FROM alpine", and
-        #   replaces them with  "FROM $CPU/alpine", where $CPU is ${{matrix.arch}}, converted to Alpine tags format.
-        # Second `-e` matches BDB version, and appends "-${{matrix.arch}}" to it.
-        #   Note that `&` represents match.
+      # Alter `Dockerfile` to reference used architecture/image combos explicitly.  Places changed are:
+      #   * all `FROM` statements (ex. `FROM alpine…` -> `FROM arm64v8/alpine…`)
+      #   * BerkeleyDB `COPY` statement (`COPY --from=lncm/berkeleydb:db-4.8.30.NC` gets suffixed with ex. `-arm64`)
+      # `sed` `--expression`s change it in the following way:
+      #   1st: Matches all occurrences of `FROM alpine`, and injects arch prefix before `alpine`, ex: `arm64v8/alpine`
+      #   2nd: Matches BDB version, and appends "-${{matrix.arch}}" to it (note that `&` represents match).
       - name: Change Dockerfile to use arch-specific base images
         if: matrix.arch != 'amd64'
         run: |
@@ -57,6 +49,9 @@ jobs:
             -e "s|^FROM alpine|FROM $CPU/alpine|g" \
             -e "s|db-4.8.30.NC|&-${{matrix.arch}}|g"
 
-      - name: Build Docker image (quick)
-        run: DOCKER_BUILDKIT=1 docker build ${{matrix.subver}}/
+      - name: Build Bitcoind
+        run: DOCKER_BUILDKIT=1 docker build -t bitcoind ${{matrix.subver}}/
+
+      - name: Print Bitcoind version
+        run: docker run --rm bitcoind --version
 
