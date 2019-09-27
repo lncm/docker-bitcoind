@@ -55,15 +55,6 @@ RUN tar -xzf "bitcoin-${BITCOIN_VERSION}.tar.gz" && \
 # Change to the extracted directory
 WORKDIR /bitcoin-${BITCOIN_VERSION}
 
-# Fix this bug: https://github.com/meeDamian/docker-bitcoind/runs/237163450#step:5:3333
-#   By applying commit from this PR: https://github.com/bitcoin/bitcoin/pull/15950
-ENV FIX "c01c065b9ded3399a6a480f15543827dd5e8eb4d"
-ENV HASH "42ef903931ac5ac7d1877cdad874626638fa2c7ef8a25b8aced61d63d5aa43eb"
-
-RUN wget "https://github.com/bitcoin/bitcoin/commit/${FIX}.diff" \
-    && echo "${HASH}  ${FIX}.diff" | sha256sum -c - \
-    && patch -p1 -i "${FIX}.diff"
-
 # ???
 RUN sed -i '/AC_PREREQ/a\AR_FLAGS=cr' src/univalue/configure.ac
 # ???
