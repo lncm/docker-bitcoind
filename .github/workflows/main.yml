@@ -49,9 +49,13 @@ jobs:
             -e "s|^FROM alpine|FROM $CPU/alpine|g" \
             -e "s|db-4.8.30.NC|&-${{matrix.arch}}|g"
 
+      # NOTE: Don't build 32-bit version of 0.17.1, as it's broken & non-essential:
+      #   https://github.com/bitcoin/bitcoin/pull/15950
       - name: Build Bitcoind
+        if: matrix.subver != '0.17' || matrix.arch != 'arm32v7'
         run: DOCKER_BUILDKIT=1 docker build  -t bitcoind  ${{matrix.subver}}/
 
       - name: Print Bitcoind version
+        if: matrix.subver != '0.17' || matrix.arch != 'arm32v7'
         run: docker run --rm bitcoind --version
 
