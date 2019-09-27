@@ -1,4 +1,4 @@
-name: Build bitcoind
+name: Build bitcoind on master push
 
 on:
   push:
