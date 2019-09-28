@@ -13,7 +13,7 @@ jobs:
     # NOTE: qemu v3.1.1 used instead of currently newest v4.1.0, because v4 is **much** slower for aarch64, see:
     #   https://github.com/meeDamian/docker-berkeleydb/commit/9e87d11314c2522726497f0c6059e61a31298e7f/checks
     env:
-      QEMU_VERSION: v3.1.1
+      QEMU_VERSION: 'v3.1.1'
 
     strategy:
       matrix:
