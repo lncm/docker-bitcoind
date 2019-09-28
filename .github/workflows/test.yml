@@ -61,5 +61,7 @@ jobs:
 
       - name: Print Bitcoind version
         if: matrix.subver != '0.17' || matrix.arch != 'arm32v7'
-        run: docker run --rm bitcoind --version
+        run: |
+          docker run --rm  --entrypoint=uname  bitcoind  -a
+          docker run --rm bitcoind --version
 
