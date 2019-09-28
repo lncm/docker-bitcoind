@@ -37,8 +37,6 @@ ARG VERSION=0.18.1
 ENV BITCOIN_VERSION=${VERSION}
 RUN echo "Building Bitcoin version: ${BITCOIN_VERSION}"
 
-ENV BITCOIN_PREFIX=/opt/bitcoin-${BITCOIN_VERSION}
-
 # Download checksums (intentionally different source than source code)
 RUN wget "https://bitcoincore.org/bin/bitcoin-core-${BITCOIN_VERSION}/SHA256SUMS.asc"
 
@@ -69,6 +67,8 @@ RUN sed -i '/AC_PREREQ/a\AR_FLAGS=cr' src/univalue/configure.ac
 RUN sed -i '/AX_PROG_CC_FOR_BUILD/a\AR_FLAGS=cr' src/secp256k1/configure.ac
 # ???
 RUN sed -i s:sys/fcntl.h:fcntl.h: src/compat.h
+
+ENV BITCOIN_PREFIX=/opt/bitcoin-${BITCOIN_VERSION}
 
 RUN ./autogen.sh
 RUN ./configure LDFLAGS=-L/opt/db4/lib/ CPPFLAGS=-I/opt/db4/include/ \
