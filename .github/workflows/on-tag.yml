@@ -30,7 +30,7 @@ jobs:
         id: env
         run: |
           VERSION="$(echo "${GITHUB_REF}" | awk -F/ '{print $NF}' | tr -d v)"
-          DIR="$(echo "${VERSION} | cut -d. -f-2)"
+          DIR="$(echo "${VERSION}" | cut -d. -f-2)"
 
           # This is a special GH-Actions notation that lets other steps access values returned this way.
           echo ::set-output name=version::"${VERSION}"
