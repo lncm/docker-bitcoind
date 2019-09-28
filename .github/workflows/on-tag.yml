@@ -64,7 +64,7 @@ jobs:
         run: >
           DOCKER_BUILDKIT=1 docker build  ${{steps.env.outputs.dir}}/
           --build-arg "VERSION=${{steps.env.outputs.version}}"
-          --tag       "bitcoind:${{matrix.arch}}"
+          --tag       bitcoind
 
       - name: Print OS info
         run: docker run --rm  --entrypoint=uname  bitcoind  -a
@@ -73,7 +73,9 @@ jobs:
         run: docker run --rm  bitcoind  --version
 
       - name: Save built image into a .tgz file
-        run: docker save "bitcoind:${{matrix.arch}}" | gzip > "images/bitcoind-${{matrix.arch}}.tgz"
+        run: |
+          docker tag  bitcoind  "bitcoind:${{matrix.arch}}"
+          docker save "bitcoind:${{matrix.arch}}" | gzip > "images/bitcoind-${{matrix.arch}}.tgz"
 
       - name: Print sha256sum of built image
         run: sha256sum images/*
