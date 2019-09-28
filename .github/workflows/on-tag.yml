@@ -162,4 +162,11 @@ jobs:
           pass: ${{secrets.DOCKER_TOKEN}}
           description: true
 
+      - name: Upload images to Github Release
+        uses: meeDamian/github-release@v1.0.0
+        with:
+          token: ${{secrets.GITHUB_TOKEN}}
+          gzip: false
+          files: images/*
+
 
