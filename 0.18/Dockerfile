@@ -91,6 +91,7 @@ RUN ls -l ${BITCOIN_PREFIX}/lib/
 
 RUN strip ${BITCOIN_PREFIX}/bin/bitcoin-cli
 RUN strip ${BITCOIN_PREFIX}/bin/bitcoin-tx
+RUN strip ${BITCOIN_PREFIX}/bin/bitcoin-wallet
 RUN strip ${BITCOIN_PREFIX}/bin/bitcoind
 RUN strip ${BITCOIN_PREFIX}/lib/libbitcoinconsensus.a
 RUN strip ${BITCOIN_PREFIX}/lib/libbitcoinconsensus.so.0.0.0
