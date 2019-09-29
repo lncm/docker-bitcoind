@@ -14,6 +14,7 @@ jobs:
     #   https://github.com/meeDamian/docker-berkeleydb/commit/9e87d11314c2522726497f0c6059e61a31298e7f/checks
     env:
       QEMU_VERSION: v3.1.1
+      DOCKER_BUILDKIT: 1
 
     strategy:
       fail-fast: false
@@ -57,7 +58,7 @@ jobs:
       #   https://github.com/bitcoin/bitcoin/pull/15950
       - name: Build Bitcoind
         if: matrix.subver != '0.17' || matrix.arch != 'arm32v7'
-        run: DOCKER_BUILDKIT=1 docker build  -t bitcoind  ${{matrix.subver}}/
+        run: docker build  -t bitcoind  ${{matrix.subver}}/
 
       - name: Print Bitcoind version
         if: matrix.subver != '0.17' || matrix.arch != 'arm32v7'

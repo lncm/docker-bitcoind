@@ -14,6 +14,7 @@ jobs:
     #   https://github.com/meeDamian/docker-berkeleydb/commit/9e87d11314c2522726497f0c6059e61a31298e7f/checks
     env:
       QEMU_VERSION: v3.1.1
+      DOCKER_BUILDKIT: 1
 
     strategy:
       matrix:
@@ -25,16 +26,12 @@ jobs:
     steps:
       - uses: actions/checkout@v1.0.0
 
-      # NOTE: This stuff should be in `jobs.<job>.env:`, but it currently doesn't support shell, so it's kinda useless…
-      - name: Prepare variables to be used later
-        id: env
+      - name: Setup environment
         run: |
           VERSION="$(echo "${GITHUB_REF}" | awk -F/ '{print $NF}' | tr -d v)"
-          DIR="$(echo "${VERSION}" | cut -d. -f-2)"
 
-          # This is a special GH-Actions notation that lets other steps access values returned this way.
-          echo ::set-output name=version::"${VERSION}"
-          echo ::set-output name=dir::"${DIR}"
+          echo ::set-env name=VERSION::"${VERSION}"
+          echo ::set-env name=DIR::"$(echo "${VERSION}" | cut -d. -f-2)"
 
       - name: Register self-compiled qemu
         if: matrix.arch != 'amd64'
@@ -54,16 +51,14 @@ jobs:
             CPU="arm64v8"
           fi
 
-          sed -i ${{steps.env.outputs.dir}}/Dockerfile \
+          sed -i ${DIR}/Dockerfile \
             -e "s|^FROM alpine|FROM $CPU/alpine|g" \
             -e "s|db-4.8.30.NC|&-${{matrix.arch}}|g"
 
-      # NOTE: Don't build 32-bit version of 0.17.1, as it's broken & non-essential:
-      #   https://github.com/bitcoin/bitcoin/pull/15950
       - name: Build Bitcoind
         run: >
-          DOCKER_BUILDKIT=1 docker build  ${{steps.env.outputs.dir}}/
-          --build-arg "VERSION=${{steps.env.outputs.version}}"
+          docker build  ${DIR}/
+          --build-arg "VERSION=${VERSION}"
           --tag       bitcoind
 
       - name: Print OS info
@@ -97,6 +92,12 @@ jobs:
     steps:
       - uses: actions/checkout@v1.0.0
 
+      - name: Setup environment
+        run: |
+          echo ::set-env name=DOCKER_USER::"${GITHUB_ACTOR,,}"
+          echo ::set-env name=SLUG::"$(echo ${GITHUB_REPOSITORY,,} | sed 's/docker-//')"
+          echo ::set-env name=VERSION::"$(echo "${GITHUB_REF}" | awk -F/ '{print $NF}')"
+
       - name: Enable manifests
         run: |
           mkdir -p ~/.docker
@@ -107,8 +108,8 @@ jobs:
 
       - name: Login to Docker Hub
         run: |
-          echo "Logging in as ${GITHUB_ACTOR,,}…"
-          echo "${{secrets.DOCKER_TOKEN}}" | docker login -u="${GITHUB_ACTOR,,}" --password-stdin
+          echo "Logging in as ${DOCKER_USER}…"
+          echo "${{secrets.DOCKER_TOKEN}}" | docker login -u="${DOCKER_USER}" --password-stdin
 
       - name: Download all build artifacts
         uses: actions/download-artifact@v1.0.0
@@ -119,51 +120,39 @@ jobs:
         run: sha256sum images/*
 
       - name: Load images locally
-        run: ls images/ | xargs -I % docker load -i "images/%"
+        run: ls images/ | xargs -I %  docker load -i "images/%"
 
       # No short tags.  IMO bitcoind version should always be specified exactly, and explicitly.
       - name: Version-tag all images
-        run: |
-          SLUG="$(echo ${GITHUB_REPOSITORY,,} | sed 's/docker-//')"
-          VERSION="$(echo "${GITHUB_REF}" | awk -F/ '{print $NF}')"
-
-          for tag in $(docker images bitcoind --format "{{.Tag}}"); do
-            docker tag  bitcoind:${tag}  ${SLUG}:${VERSION}-${tag}
-          done
+        run: docker images bitcoind --format "{{.Tag}}" | xargs -I %  docker tag  "bitcoind:%"  "${SLUG}:${VERSION}-%"
 
       - name: List all tagged images
-        run: |
-          SLUG="$(echo "${GITHUB_REPOSITORY,,}" | sed 's/docker-//')"
-
-          docker images ${SLUG}
+        run: docker images "${SLUG}"
 
       - name: Push all images
-        run: |
-          SLUG="$(echo "${GITHUB_REPOSITORY,,}" | sed 's/docker-//')"
-
-          for image in $(docker images "${SLUG}" --format "{{.Repository}}:{{.Tag}}"); do
-            docker push "${IMAGE}"
-          done
+        run: docker images "${SLUG}" --format "{{.Repository}}:{{.Tag}}" | xargs -I %  docker push %
 
       - name: Create manifest
-        run: |
-          SLUG="$(echo "${GITHUB_REPOSITORY,,}" | sed 's/docker-//')"
-          VERSION="$(echo "${GITHUB_REF}" | awk -F/ '{print $NF}')"
-
+        run: >
           docker -D manifest create  "${SLUG}:${VERSION}"  \
             "${SLUG}:${VERSION}-amd64" \
             "${SLUG}:${VERSION}-arm64" \
             "${SLUG}:${VERSION}-arm32v7"
 
-          docker manifest annotate "${SLUG}:${VERSION}" "${SLUG}:${VERSION}-arm32v7" --os linux --arch arm   --variant v7
-          docker manifest annotate "${SLUG}:${VERSION}" "${SLUG}:${VERSION}-arm64"   --os linux --arch arm64 --variant v8
+      - name: Annotate arm32v7
+        run: docker manifest annotate "${SLUG}:${VERSION}" "${SLUG}:${VERSION}-arm32v7" --os linux --arch arm   --variant v7
 
-          docker manifest push "${SLUG}:${VERSION}"
+      - name: Annotate arm64v8
+        run: docker manifest annotate "${SLUG}:${VERSION}" "${SLUG}:${VERSION}-arm64"   --os linux --arch arm64 --variant v8
+
+      - name: Push manifest
+        run: docker manifest push "${SLUG}:${VERSION}"
 
       - name: Sync README.md and Description to Docker Hub
         uses: meeDamian/sync-readme@v1.0.5
         with:
           pass: ${{secrets.DOCKER_TOKEN}}
+          slug: lncm/bitcoind
           description: true
 
       - name: Upload images to Github Release
