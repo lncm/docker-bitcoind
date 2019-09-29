@@ -80,10 +80,8 @@ RUN ./configure LDFLAGS=-L/opt/db4/lib/ CPPFLAGS=-I/opt/db4/include/ \
     --with-libs \
     --with-daemon
 
-# `-j3` used instead of `-j$(nproc)`, based on better results here:
-#   https://github.com/meeDamian/docker-bitcoind/commit/40fe90c026399f2d5c2de35535006572e14d24db/checks
-RUN make -j3
-RUN make -j3 check
+RUN make -j$(($(nproc) + 1))
+RUN make -j$(($(nproc) + 1)) check
 RUN make install
 
 RUN ls -l ${BITCOIN_PREFIX}/bin/
