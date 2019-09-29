@@ -74,6 +74,8 @@ jobs:
 
       - name: Save built image into a .tgz file
         run: |
+          mkdir -p images/
+
           docker tag  bitcoind  "bitcoind:${{matrix.arch}}"
           docker save "bitcoind:${{matrix.arch}}" | gzip > "images/bitcoind-${{matrix.arch}}.tgz"
 
