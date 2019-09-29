@@ -19,7 +19,7 @@ RUN sed -i 's|http://dl-cdn.alpinelinux.org|https://alpine.global.ssl.fastly.net
         zeromq-dev
 
 # Fetch already built berkeleydb
-COPY --from=meedamian/berkeleydb:db-4.8.30.NC  /opt/  /opt/
+COPY --from=lncm/berkeleydb:db-4.8.30.NC  /opt/  /opt/
 
 ENV KEY 01EA5486DE18A882D4C2684590C8019E36C2E964
 
