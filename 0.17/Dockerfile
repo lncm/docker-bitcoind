@@ -94,7 +94,7 @@ RUN strip ${BITCOIN_PREFIX}/lib/libbitcoinconsensus.so.0.0.0
 RUN ls -lh ${BITCOIN_PREFIX}/bin/  ${BITCOIN_PREFIX}/lib/
 
 # Print sha256 hashes of final binaries
-RUN sha256sum ${BITCOIN_PREFIX}/bin/*  ${BITCOIN_PREFIX}/lib/*
+RUN find -L ${BITCOIN_PREFIX}/  -type f  -exec sha256sum {} \; | sort -t ' ' -k 2
 
 
 
