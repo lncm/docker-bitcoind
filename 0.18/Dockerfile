@@ -142,4 +142,5 @@ EXPOSE 8332 18332 18443
 EXPOSE 28332 28333
 
 ENTRYPOINT ["bitcoind"]
-CMD ["bitcoind", "-zmqpubrawblock=tcp://0.0.0.0:28332", "-zmqpubrawtx=tcp://0.0.0.0:28333"]
+
+CMD ["-zmqpubrawblock=tcp://0.0.0.0:28332", "-zmqpubrawtx=tcp://0.0.0.0:28333"]
