@@ -80,7 +80,6 @@ RUN ./configure LDFLAGS=-L/opt/db4/lib/ CPPFLAGS=-I/opt/db4/include/ \
     --with-libs \
     --with-daemon
 
-RUN make -j$(($(nproc) + 1))
 RUN make -j$(($(nproc) + 1)) check
 RUN make install
 
