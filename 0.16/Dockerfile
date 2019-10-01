@@ -37,10 +37,10 @@ ARG VERSION=0.16.3
 ENV BITCOIN_VERSION=${VERSION}
 RUN echo "Building Bitcoin version: ${BITCOIN_VERSION}"
 
-# Download checksums (intentionally different source than source code)
+# Download checksums
 RUN wget "https://bitcoincore.org/bin/bitcoin-core-${BITCOIN_VERSION}/SHA256SUMS.asc"
 
-# Download source code (intentionally different source than checksums)
+# Download source code (intentionally different website than checksums)
 RUN wget "https://bitcoin.org/bin/bitcoin-core-${BITCOIN_VERSION}/bitcoin-${BITCOIN_VERSION}.tar.gz"
 
 # Verify that hashes are signed with the previously imported key
@@ -63,11 +63,11 @@ RUN sed -i '/AX_PROG_CC_FOR_BUILD/a\AR_FLAGS=cr' src/secp256k1/configure.ac
 # ???
 RUN sed -i s:sys/fcntl.h:fcntl.h: src/compat.h
 
-ENV BITCOIN_PREFIX=/opt/bitcoin-${BITCOIN_VERSION}
+ENV BITCOIN_PREFIX="/opt/bitcoin-${BITCOIN_VERSION}"
 
 RUN ./autogen.sh
 RUN ./configure LDFLAGS=-L/opt/db4/lib/ CPPFLAGS=-I/opt/db4/include/ \
-    --prefix=${BITCOIN_PREFIX} \
+    --prefix="${BITCOIN_PREFIX}" \
     --mandir=/usr/share/man \
     --disable-ccache \
     --with-gui=no \
@@ -78,14 +78,20 @@ RUN ./configure LDFLAGS=-L/opt/db4/lib/ CPPFLAGS=-I/opt/db4/include/ \
 RUN make -j$(($(nproc) + 1)) check
 RUN make install
 
-RUN ls -l ${BITCOIN_PREFIX}/bin/
-RUN ls -l ${BITCOIN_PREFIX}/lib/
+# List installed libs, and binaries pre-strip
+RUN ls -lh ${BITCOIN_PREFIX}/bin/  ${BITCOIN_PREFIX}/lib/
 
 RUN strip ${BITCOIN_PREFIX}/bin/bitcoin-cli
 RUN strip ${BITCOIN_PREFIX}/bin/bitcoin-tx
 RUN strip ${BITCOIN_PREFIX}/bin/bitcoind
 RUN strip ${BITCOIN_PREFIX}/lib/libbitcoinconsensus.a
 RUN strip ${BITCOIN_PREFIX}/lib/libbitcoinconsensus.so.0.0.0
+
+# List installed libs, and binaries after stripping
+RUN ls -lh ${BITCOIN_PREFIX}/bin/  ${BITCOIN_PREFIX}/lib/
+
+# Print sha256 hashes of final binaries
+RUN sha256sum ${BITCOIN_PREFIX}/bin/*  ${BITCOIN_PREFIX}/lib/*
 
 
 
@@ -107,8 +113,8 @@ RUN apk add --no-cache \
 ARG VERSION=0.16.3
 ENV BITCOIN_VERSION=${VERSION}
 
-ENV BITCOIN_PREFIX=/opt/bitcoin-${BITCOIN_VERSION}
-ENV PATH=${BITCOIN_PREFIX}/bin:$PATH
+ENV BITCOIN_PREFIX="/opt/bitcoin-${BITCOIN_VERSION}"
+ENV PATH="${BITCOIN_PREFIX}/bin:$PATH"
 
 VOLUME /root/.bitcoin
 
