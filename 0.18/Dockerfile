@@ -83,6 +83,9 @@ RUN ./configure LDFLAGS=-L/opt/db4/lib/ CPPFLAGS=-I/opt/db4/include/ \
 RUN make -j$(($(nproc) + 1)) check
 RUN make install
 
+# Already taken advantage of before by `make check`.  No need to have them installed, as they're very big (~500 MB).
+RUN rm ${BITCOIN_PREFIX}/bin/bench_bitcoin  ${BITCOIN_PREFIX}/bin/test_bitcoin
+
 # List installed libs, and binaries pre-strip
 RUN ls -lh ${BITCOIN_PREFIX}/bin/  ${BITCOIN_PREFIX}/lib/
 
