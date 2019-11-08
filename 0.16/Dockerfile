@@ -33,7 +33,7 @@ RUN for SRV in hkp://p80.pool.sks-keyservers.net:80  ha.pool.sks-keyservers.net 
 
 RUN gpg --list-keys
 
-ARG VERSION=0.17.1
+ARG VERSION=0.16.3
 ENV BITCOIN_VERSION=${VERSION}
 RUN echo "Building Bitcoin version: ${BITCOIN_VERSION}"
 
@@ -113,7 +113,7 @@ RUN apk add --no-cache \
     libzmq \
     su-exec
 
-ARG VERSION=0.17.1
+ARG VERSION=0.16.3
 ENV BITCOIN_VERSION=${VERSION}
 
 ENV BITCOIN_PREFIX="/opt/bitcoin-${BITCOIN_VERSION}"

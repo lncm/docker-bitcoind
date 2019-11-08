@@ -1,9 +1,0 @@
-name: Build bitcoind on amd64
-on: [push]
-jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@master
-      - name: Build Docker image
-        run: docker build 0.18/  -f 0.18/source-native/Dockerfile
