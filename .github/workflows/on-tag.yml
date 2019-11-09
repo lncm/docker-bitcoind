@@ -156,7 +156,7 @@ jobs:
           description: true
 
       - name: Upload images to Github Release
-        uses: meeDamian/github-release@v1.0.0
+        uses: meeDamian/github-release@v1.0.1
         with:
           token: ${{secrets.GITHUB_TOKEN}}
           gzip: false
