@@ -42,7 +42,7 @@ RUN gpg --list-keys && \
 #
 FROM bitcoin-base AS from-release
 
-ARG VERSION=0.19.0
+ARG VERSION=0.19.0.1
 ENV BITCOIN_VERSION=${VERSION}
 RUN echo "Building Bitcoin version (from release): ${BITCOIN_VERSION}"
 
@@ -70,7 +70,7 @@ FROM bitcoin-base AS from-git
 
 RUN apk add git
 
-ARG VERSION=0.19.0
+ARG VERSION=0.19.0.1
 ENV BITCOIN_VERSION=${VERSION}
 RUN echo "Building Bitcoin version (from git): ${BITCOIN_VERSION}"
 
@@ -142,7 +142,7 @@ LABEL maintainer="Damian Mee (@meeDamian)"
 RUN sed -i 's|http://dl-cdn.alpinelinux.org|https://alpine.global.ssl.fastly.net|g' /etc/apk/repositories && \
     apk add --no-cache libressl libstdc++ boost-thread boost-chrono boost-filesystem libevent libsodium libzmq
 
-ARG VERSION=0.19.0
+ARG VERSION=0.19.0.1
 ENV BITCOIN_VERSION=${VERSION}
 
 ENV BITCOIN_PREFIX="/opt/bitcoin-${BITCOIN_VERSION}"
