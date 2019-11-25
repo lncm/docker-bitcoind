@@ -139,14 +139,8 @@ FROM alpine:3.10 AS final
 LABEL maintainer="Damian Mee (@meeDamian)"
 
 # Use APK repos over HTTPS. See: https://github.com/gliderlabs/docker-alpine/issues/184
-RUN sed -i 's|http://dl-cdn.alpinelinux.org|https://alpine.global.ssl.fastly.net|g' /etc/apk/repositories
-RUN apk add --no-cache \
-    boost \
-    boost-program_options \
-    libevent \
-    libressl \
-    libzmq \
-    su-exec
+RUN sed -i 's|http://dl-cdn.alpinelinux.org|https://alpine.global.ssl.fastly.net|g' /etc/apk/repositories && \
+    apk add --no-cache libressl libstdc++ boost-thread boost-chrono boost-filesystem libevent libsodium libzmq
 
 ARG VERSION=0.19.0
 ENV BITCOIN_VERSION=${VERSION}
