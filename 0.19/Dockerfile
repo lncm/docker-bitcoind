@@ -1,4 +1,4 @@
-ARG SOURCE=git
+ARG SOURCE=release
 
 FROM alpine:3.10 AS bitcoin-base
 
