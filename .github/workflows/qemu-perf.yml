@@ -3,7 +3,7 @@ name: Perf-check qemu versions
 on:
   schedule:
 #    - cron: '2 1 * * *'
-    - cron: '16 * * * *'
+    - cron: '21 * * * *'
 
 jobs:
   build:
