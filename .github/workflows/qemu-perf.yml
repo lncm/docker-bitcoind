@@ -1,0 +1,61 @@
+name: Perf-check qemu versions
+
+on:
+  schedule:
+    - cron: '2 1 * * *'
+    - cron: '13 * * * *'
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-18.04
+
+    env:
+      DOCKER_BUILDKIT: 1
+      SUBVER: 0.19
+
+    strategy:
+      fail-fast: false
+      matrix:
+        qemu:
+          - v3.1.0
+          - v3.1.1
+          - v4.0.0
+          - v4.1.0
+          - v4.1.1
+
+        arch:
+          - arm32v7
+          - arm64
+
+    steps:
+      - uses: actions/checkout@v1.0.0
+
+      - name: Register self-compiled qemu
+        run: docker run --rm --privileged meedamian/simple-qemu:${{matrix.qemu}}-${{matrix.arch}} -p yes
+
+      # Alter `Dockerfile` to reference used architecture/image combos explicitly.  Places changed are:
+      #   * all `FROM` statements (ex. `FROM alpine…` -> `FROM arm64v8/alpine…`)
+      #   * BerkeleyDB `COPY` statement (`COPY --from=lncm/berkeleydb:db-4.8.30.NC` gets suffixed with ex. `-arm64`)
+      # `sed` `--expression`s change it in the following way:
+      #   1st: Matches all occurrences of `FROM alpine`, and injects arch prefix before `alpine`, ex: `arm64v8/alpine`
+      #   2nd: Matches BDB version, and appends "-${{matrix.arch}}" to it (note that `&` represents match).
+      - name: Change Dockerfile to use arch-specific base images
+        run: |
+          CPU=${{matrix.arch}}
+          if [[ "${CPU}" == "arm64" ]]; then
+            CPU="arm64v8"
+          fi
+
+          sed -i ${SUBVER}/Dockerfile \
+            -e "s|^FROM alpine|FROM $CPU/alpine|g" \
+            -e "s|db-4.8.30.NC|&-${{matrix.arch}}|g"
+
+      - name: Build container
+        run: docker build  -t bitcoind  ${SUBVER}/
+
+      - name: Print Bitcoind version
+        run: |
+          docker run --rm  --entrypoint=uname  bitcoind  -a
+          docker run --rm                      bitcoind  --version
+
