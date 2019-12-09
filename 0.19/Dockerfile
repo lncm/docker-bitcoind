@@ -149,8 +149,7 @@ ENV BITCOIN_PREFIX="/opt/bitcoin-${BITCOIN_VERSION}"
 
 VOLUME /root/.bitcoin
 
-COPY --from=bitcoin-core "${BITCOIN_PREFIX}/bin/bitcoind" /usr/local/bin/
-COPY --from=bitcoin-core "${BITCOIN_PREFIX}/bin/bitcoin-cli" /usr/local/bin/
+COPY --from=bitcoin-core "${BITCOIN_PREFIX}/bin/" /usr/local/bin/
 
 # REST interface
 EXPOSE 8080
