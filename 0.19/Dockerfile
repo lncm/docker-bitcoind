@@ -112,9 +112,6 @@ RUN ./configure LDFLAGS=-L/opt/db4/lib/ CPPFLAGS=-I/opt/db4/include/ \
 RUN make -j$(($(nproc) + 1)) check
 RUN make install
 
-# Already taken advantage of before by `make check`.  No need to have them installed, as they're very big (~500 MB).
-RUN rm ${BITCOIN_PREFIX}/bin/bench_bitcoin  ${BITCOIN_PREFIX}/bin/test_bitcoin
-
 # List installed libs, and binaries pre-strip
 RUN ls -lh ${BITCOIN_PREFIX}/bin/  ${BITCOIN_PREFIX}/lib/
 
@@ -122,8 +119,6 @@ RUN strip ${BITCOIN_PREFIX}/bin/bitcoin-cli
 RUN strip ${BITCOIN_PREFIX}/bin/bitcoin-tx
 RUN strip ${BITCOIN_PREFIX}/bin/bitcoin-wallet
 RUN strip ${BITCOIN_PREFIX}/bin/bitcoind
-RUN strip ${BITCOIN_PREFIX}/lib/libbitcoinconsensus.a
-RUN strip ${BITCOIN_PREFIX}/lib/libbitcoinconsensus.so.0.0.0
 
 # List installed libs, and binaries after stripping
 RUN ls -lh ${BITCOIN_PREFIX}/bin/  ${BITCOIN_PREFIX}/lib/
@@ -146,11 +141,10 @@ ARG VERSION=0.19.0.1
 ENV BITCOIN_VERSION=${VERSION}
 
 ENV BITCOIN_PREFIX="/opt/bitcoin-${BITCOIN_VERSION}"
-ENV PATH="${BITCOIN_PREFIX}/bin:$PATH"
 
 VOLUME /root/.bitcoin
 
-COPY --from=bitcoin-core /opt /opt
+COPY --from=bitcoin-core "${BITCOIN_PREFIX}/bin/" /usr/local/bin/
 
 # REST interface
 EXPOSE 8080
