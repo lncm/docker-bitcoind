@@ -150,7 +150,8 @@ ENV PATH="${BITCOIN_PREFIX}/bin:$PATH"
 
 VOLUME /root/.bitcoin
 
-COPY --from=bitcoin-core /opt /opt
+COPY --from=bitcoin-core "${BITCOIN_PREFIX}/bin/bitcoind" /usr/local/bin/
+COPY --from=bitcoin-core "${BITCOIN_PREFIX}/bin/bitcoin-cli" /usr/local/bin/
 
 # REST interface
 EXPOSE 8080
