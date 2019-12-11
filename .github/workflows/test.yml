@@ -1,9 +1,6 @@
-name: Build bitcoind on master push
+name: Build bitcoind on push
 
-on:
-  push:
-    branches:
-      - master
+on: push
 
 jobs:
   build:
