@@ -28,6 +28,10 @@ jobs:
           - amd64
 
     steps:
+      - name: Skip non native builds on non master pushes
+        if: github.ref != 'master' && matrix.arch != 'amd64'
+        run: exit 1
+        
       - uses: actions/checkout@v1.0.0
 
       - name: Register self-compiled qemu
