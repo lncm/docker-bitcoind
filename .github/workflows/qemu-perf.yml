@@ -4,6 +4,10 @@ on:
   schedule:
     - cron: '2 1 * * *'
 
+  push:
+    branches:
+      - qemu
+
 jobs:
   build:
     name: Build
