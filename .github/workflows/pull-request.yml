@@ -1,9 +1,6 @@
-name: Build bitcoind on master push
+name: Build bitcoind on push
 
-on:
-  push:
-    branches:
-      - master
+on: pull_request
 
 jobs:
   build:
@@ -26,8 +23,6 @@ jobs:
           - '0.19'
 
         arch:
-          - arm32v7
-          - arm64
           - amd64
 
     steps:
