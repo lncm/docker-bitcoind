@@ -1,0 +1,31 @@
+name: Build bitcoind on pull request
+
+on: pull_request
+
+jobs:
+  build:
+    name: Build Bitcoind
+    runs-on: ubuntu-18.04
+
+    env:
+      DOCKER_BUILDKIT: 1
+
+    strategy:
+      fail-fast: false
+      matrix:
+        subver:
+          - '0.16'
+          - '0.17'
+          - '0.18'
+          - '0.19'
+
+    steps:
+      - uses: actions/checkout@v1.0.0
+
+      - name: Build Bitcoind
+        run: docker build  -t bitcoind  ${{matrix.subver}}/
+
+      - name: Print Bitcoind version
+        run: |
+          docker run --rm  --entrypoint=uname  bitcoind  -a
+          docker run --rm bitcoind --version

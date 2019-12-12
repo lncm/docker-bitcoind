@@ -66,4 +66,3 @@ jobs:
         run: |
           docker run --rm  --entrypoint=uname  bitcoind  -a
           docker run --rm bitcoind --version
-
