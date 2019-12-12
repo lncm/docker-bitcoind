@@ -1,4 +1,4 @@
-name: Build bitcoind on push
+name: Build bitcoind on pull request
 
 on: pull_request
 
