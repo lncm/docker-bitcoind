@@ -1,13 +1,15 @@
 ARG SOURCE=release
 
-FROM alpine:3.10 AS bitcoin-base
+FROM alpine:3.11 AS bitcoin-base
 
 # Use APK repos over HTTPS. See: https://github.com/gliderlabs/docker-alpine/issues/184
-RUN sed -i 's|http://dl-cdn.alpinelinux.org|https://alpine.global.ssl.fastly.net|g' /etc/apk/repositories && \
-    apk add --no-cache \
+RUN sed -i 's|http://dl-cdn.alpinelinux.org|https://alpine.global.ssl.fastly.net|g' /etc/apk/repositories
+RUN echo "@edge http://dl-cdn.alpinelinux.org/alpine/edge/main" >> /etc/apk/repositories
+
+RUN apk add --no-cache \
         autoconf \
         automake \
-        boost-dev \
+        boost-dev@edge \
         build-base \
         chrpath \
         file \
@@ -122,7 +124,7 @@ RUN find -L ${BITCOIN_PREFIX}/  -type f  -exec sha256sum {} \; | sort -t ' ' -k 
 
 
 # Build stage for compiled artifacts
-FROM alpine:3.10 AS final
+FROM alpine:3.11 AS final
 
 LABEL maintainer="Damian Mee (@meeDamian)"
 
