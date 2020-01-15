@@ -4,6 +4,10 @@ on:
   schedule:
     - cron: '2 1 * * *'
 
+  push:
+    branches:
+      - 'perf'
+
 jobs:
   build:
     name: Build
@@ -30,6 +34,9 @@ jobs:
 
     steps:
       - uses: actions/checkout@v1.0.0
+
+      - name: Log start time
+        run: touch /tmp/start
 
       - name: Register self-compiled qemu
         run: docker run --rm --privileged meedamian/simple-qemu:${{matrix.qemu}}-${{matrix.arch}} -p yes
@@ -58,4 +65,74 @@ jobs:
         run: |
           docker run --rm  --entrypoint=uname  bitcoind  -a
           docker run --rm                      bitcoind  --version
+
+      - name: Calculate execution time
+        run: |
+          START=$(date -r /tmp/start +%s)
+          NOW=$(date +%s)
+
+          DIFF=$(( NOW - START ))
+
+          SEC=1
+          MIN=$(( 60 * SEC ))
+          HOUR=$(( 60 * MIN ))
+          DAY=$(( 24 * HOUR ))
+
+          secs=$(( DIFF % 60 ))
+          mins=$(( $(( DIFF / MIN )) % 60 ))
+          hours=$(( $(( DIFF / HOUR )) % 24 ))
+          days=$(( DIFF / DAY ))
+
+          OUT=""
+          if [[ "${days}" -ne "0" ]]; then
+            # Days-long jobs shouldn't happen, but 🤷🏻‍♂️
+            OUT="${days}d "
+          fi
+
+          OUT="${OUT}${hours}h:${mins}m:${secs}s"
+
+          mkdir -p stat
+
+          echo "${OUT}" > stat/${{matrix.qemu}}-${{matrix.arch}}
+
+      - name: Save execution time as an artifact
+        uses: actions/upload-artifact@v1.0.0
+        with:
+          name: stats
+          path: stat/
+
+  comment:
+    name: Report result
+    runs-on: ubuntu-18.04
+    steps:
+      - name: Download perf stats
+        uses: actions/download-artifact@v1.0.0
+        with:
+          name: stats
+
+      - name: Aggregate results
+        run: |
+          touch ./all-stats
+          echo "| version | arch | time" >> ./all-stats
+          echo "|---------|------|------" >> ./all-stats
+
+          for file in $(ls ./stats/*); do
+            VER="$(echo "${file}" | cut -d- -f1)"
+            ARCH="$(echo "${file}" | cut -d- -f2)"
+            TIME="$(cat stats/${file} | tr -d '\n')"
+            echo "| ${VER} | ${ARCH} | ${TIME}" >> ./all-stats
+          done
+
+      - uses: actions/github-script@0.4.0
+        with:
+          github-token: ${{secrets.GITHUB_TOKEN}}
+          debug: true
+          script: |
+            github.issues.createComment({
+              issue_number: 9,
+              owner: context.owner,
+              repo: context.repo,
+              body: '👋 Thanks for reporting!'
+            })
+
 
