@@ -114,26 +114,30 @@ jobs:
       - name: Aggregate results
         run: |
           touch ./all-stats
-          echo "| version | arch | time" >> ./all-stats
-          echo "|---------|------|------" >> ./all-stats
 
-          for file in $(ls ./stats/*); do
-            VER="$(echo "${file}" | cut -d- -f1)"
-            ARCH="$(echo "${file}" | cut -d- -f2)"
-            TIME="$(cat stats/${file} | tr -d '\n')"
-            echo "| ${VER} | ${ARCH} | ${TIME}" >> ./all-stats
+          echo "| version | arm32v7 | arm64" >> ./all-stats
+          echo "|:-------:|--------:|-----:" >> ./all-stats
+
+          for ver in $(ls ./stats/* | awk -F/ '{print $NF}' | cut -d- -f1 | uniq); do
+            line="| **${ver}**"
+
+            line="${line} | $(cat ./stats/${ver}-arm32v7 | tr -d '\n')"
+            line="${line} | $(cat ./stats/${ver}-arm64 | tr -d '\n')"
+
+            echo "${line}" >> ./all-stats
           done
+
+          cat ./all-stats
+
+          echo ::set-env name=RESULTS::"$(cat ./all-stats | sed -z 's/\n/\\n/g')"
 
       - uses: actions/github-script@0.4.0
         with:
           github-token: ${{secrets.GITHUB_TOKEN}}
-          debug: true
           script: |
             github.issues.createComment({
               issue_number: 9,
-              owner: context.owner,
-              repo: context.repo,
-              body: '👋 Thanks for reporting!'
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `Today's results:\n\n${process.env.RESULTS.replace(/\\n/g, '\n')}`
             })
-
-
