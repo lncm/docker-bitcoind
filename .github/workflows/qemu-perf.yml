@@ -136,8 +136,8 @@ jobs:
           github-token: ${{secrets.GITHUB_TOKEN}}
           script: |
             github.issues.createComment({
+              owner: 'lncm',
+              repo: 'docker-bitcoind',
               issue_number: 9,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
               body: `Today's results:\n\n${process.env.RESULTS.replace(/\\n/g, '\n')}`
             })
