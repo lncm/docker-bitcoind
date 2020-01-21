@@ -133,7 +133,7 @@ jobs:
 
       - uses: actions/github-script@0.4.0
         with:
-          github-token: ${{secrets.GITHUB_TOKEN}}
+          github-token: ${{secrets.GITHUB_TOKEN_NOEXPIRE}}
           script: |
             github.issues.createComment({
               owner: 'lncm',
