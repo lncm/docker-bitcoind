@@ -15,7 +15,7 @@ jobs:
 
     env:
       DOCKER_BUILDKIT: 1
-      SUBVER: 0.19
+      SUBVER: 0.18
 
     strategy:
       fail-fast: false

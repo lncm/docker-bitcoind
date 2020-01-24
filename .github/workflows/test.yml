@@ -18,15 +18,15 @@ jobs:
       fail-fast: false
       matrix:
         subver:
-          - '0.16'
-          - '0.17'
-          - '0.18'
-          - '0.19'
+          - 0.16
+          - 0.17
+          - 0.18
+          - 0.19
 
         arch:
-          - arm32v7
-          - arm64
           - amd64
+          - arm64
+          - arm32v7
 
     steps:
       - uses: actions/checkout@v1.0.0
@@ -42,7 +42,7 @@ jobs:
       #   1st: Matches all occurrences of `FROM alpine`, and injects arch prefix before `alpine`, ex: `arm64v8/alpine`
       #   2nd: Matches BDB version, and appends "-${{matrix.arch}}" to it (note that `&` represents match).
       - name: Change Dockerfile to use arch-specific base images
-        if: matrix.arch != 'amd64'
+        if: matrix.arch != 'amd64'  &&  matrix.subver != '0.19'
         run: |
           CPU=${{matrix.arch}}
           if [[ "${CPU}" == "arm64" ]]; then
