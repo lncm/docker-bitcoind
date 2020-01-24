@@ -19,7 +19,7 @@ jobs:
       matrix:
         subver:
           - 0.16
-          - 0.17
+#          - 0.17
           - 0.18
           - 0.19
 
@@ -56,11 +56,28 @@ jobs:
       # NOTE: Don't build 32-bit version of 0.17.1, as it's broken & non-essential:
       #   https://github.com/bitcoin/bitcoin/pull/15950
       - name: Build Bitcoind
-        if: matrix.subver != '0.17' || matrix.arch != 'arm32v7'
+#        if: matrix.subver != '0.17' || matrix.arch != 'arm32v7'
+        if: matrix.arch != '0.19' || matrix.arch == 'amd64'
         run: docker build  -t bitcoind  ${{matrix.subver}}/
 
+      ## Set target ${ARCH}-itecture for Docker Image built in this job.  Used in `final` stage as: `FROM ${ARCH}/alpine:…`
+      #   fmt:  amd64|arm32v7|arm64v8
+      #   NOTE: Replace `arm64` with `arm64v8`
+      - name: Set ARCH (env var)
+        if: matrix.subver == '0.19' && matrix.arch != 'amd64'
+        run: |
+          ARCH=${{matrix.arch}}
+          if [[ "${{matrix.arch}}" == "arm64" ]]; then
+          ARCH="arm64v8"
+          fi
+          echo ::set-env name=ARCH::"${ARCH}"
+
+      - name: Build Bitcoind
+        if: matrix.subver == '0.19' && matrix.arch != 'amd64'
+        run: docker build  --build-arg="ARCH=${ARCH}" -t bitcoind  ${{matrix.subver}}/
+
       - name: Print Bitcoind version
-        if: matrix.subver != '0.17' || matrix.arch != 'arm32v7'
+#        if: matrix.subver != '0.17' || matrix.arch != 'arm32v7'
         run: |
           docker run --rm  --entrypoint=uname  bitcoind  -a
           docker run --rm bitcoind --version
