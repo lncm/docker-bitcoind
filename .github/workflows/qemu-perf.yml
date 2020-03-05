@@ -39,7 +39,7 @@ jobs:
         run: touch /tmp/start
 
       - name: Register self-compiled qemu
-        run: docker run --rm --privileged meedamian/simple-qemu:${{matrix.qemu}}-${{matrix.arch}} -p yes
+        run: docker run --rm --privileged "meedamian/simple-qemu:${{ matrix.qemu }}-${{ matrix.arch }}" -p yes
 
       # Alter `Dockerfile` to reference used architecture/image combos explicitly.  Places changed are:
       #   * all `FROM` statements (ex. `FROM alpine…` -> `FROM arm64v8/alpine…`)
@@ -49,14 +49,14 @@ jobs:
       #   2nd: Matches BDB version, and appends "-${{matrix.arch}}" to it (note that `&` represents match).
       - name: Change Dockerfile to use arch-specific base images
         run: |
-          CPU=${{matrix.arch}}
-          if [[ "${CPU}" == "arm64" ]]; then
+          CPU=${{ matrix.arch }}
+          if [[ "$CPU" == "arm64" ]]; then
             CPU="arm64v8"
           fi
 
-          sed -i ${SUBVER}/Dockerfile \
+          sed -i "$SUBVER/Dockerfile" \
             -e "s|^FROM alpine|FROM $CPU/alpine|g" \
-            -e "s|db-4.8.30.NC|&-${{matrix.arch}}|g"
+            -e "s|db-4.8.30.NC|&-${{ matrix.arch }}|g"
 
       - name: Build container
         run: docker build  -t bitcoind  ${SUBVER}/
@@ -84,16 +84,16 @@ jobs:
           days=$(( DIFF / DAY ))
 
           OUT=""
-          if [[ "${days}" -ne "0" ]]; then
+          if [[ "$days" -ne "0" ]]; then
             # Days-long jobs shouldn't happen, but 🤷🏻‍♂️
             OUT="${days}d "
           fi
 
-          OUT="${OUT}${hours}h:${mins}m:${secs}s"
+          OUT="$OUT${hours}h:${mins}m:${secs}s"
 
           mkdir -p stat
 
-          echo "${OUT}" > stat/${{matrix.qemu}}-${{matrix.arch}}
+          echo "$OUT" > stat/${{ matrix.qemu }}-${{ matrix.arch }}
 
       - name: Save execution time as an artifact
         uses: actions/upload-artifact@v1.0.0
@@ -121,10 +121,10 @@ jobs:
           for ver in $(ls ./stats/* | awk -F/ '{print $NF}' | cut -d- -f1 | uniq); do
             line="| **${ver}**"
 
-            line="${line} | $(cat ./stats/${ver}-arm32v7 | tr -d '\n')"
-            line="${line} | $(cat ./stats/${ver}-arm64 | tr -d '\n')"
+            line="$line | $(cat ./stats/$ver-arm32v7 | tr -d '\n')"
+            line="$line | $(cat ./stats/$ver-arm64 | tr -d '\n')"
 
-            echo "${line}" >> ./all-stats
+            echo "$line" >> ./all-stats
           done
 
           cat ./all-stats
@@ -133,7 +133,7 @@ jobs:
 
       - uses: actions/github-script@0.4.0
         with:
-          github-token: ${{secrets.GITHUB_TOKEN_NOEXPIRE}}
+          github-token: ${{ secrets.GITHUB_TOKEN_NOEXPIRE }}
           script: |
             github.issues.createComment({
               owner: 'lncm',

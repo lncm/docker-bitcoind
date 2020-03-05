@@ -1,29 +1,37 @@
-# This Dockerfile builds Bitcoind … TODO:
+# This Dockerfile builds Bitcoin Core and packages it into a minimal `final` image
 
-# Bitcoin Core version to be build
-#   NOTE: Unlike other images this one is NOT prefixed with `v`, as many things (like download URLs) use this form instead.
+# VERSION of Bitcoin Core to be build
+#   NOTE: Unlike our other images this one is NOT prefixed with `v`,
+#           as many things (like download URLs) use this form instead.
 ARG VERSION=0.19.0.1
 
-# Target CPU archtecture of built bitcoind binaries
+# CPU archtecture to build binaries for
 ARG ARCH
 
 # Define default versions so that they don't have to be repreated throughout the file
 ARG VER_ALPINE=3.11
 
+# $USER name, and data $DIR to be used in the `final` image
 ARG USER=bitcoind
 ARG DIR=/data
 
-# `SOURCE=git` can be used for rc releases
+# Choose where to get bitcoind sources from, options: release, git
+#   NOTE: Only `SOURCE=git` can be used for RC releases
 ARG SOURCE=release
+
+# Choose where to get BerkeleyDB from, options: prebuilt, compile
+#   NOTE: When compiled here total execution time exceeds allowed CI limits, so pre-built one is used by default
+ARG BDB_SOURCE=prebuilt
 
 
 
 #
-##
+## `preparer-base` installs dependencies needed by both ways of fetching the source,
+#       as well as imports GPG keys needed to verify authenticity of the source.
 #
 FROM alpine:${VER_ALPINE} AS preparer-base
 
-# Use APK repos over HTTPS. See: https://github.com/gliderlabs/docker-alpine/issues/184
+# Make sure APKs are downloaded over SSL. See: https://github.com/gliderlabs/docker-alpine/issues/184
 RUN sed -i 's|http://dl-cdn.alpinelinux.org|https://alpine.global.ssl.fastly.net|g' /etc/apk/repositories
 
 RUN apk add --no-cache  gnupg
@@ -33,13 +41,14 @@ ENV KEYS 71A3B16735405025D447E8F274810B012346C9A6 01EA5486DE18A882D4C2684590C801
 # Try to fetch keys from keyservers listed below.  On first success terminate with `exit 0`.  If loop is not interrupted,
 #   it means all attempts failed, and `exit 1` is called.
 RUN for srv in  keyserver.ubuntu.com  hkp://p80.pool.sks-keyservers.net:80  ha.pool.sks-keyservers.net  keyserver.pgp.com  pgp.mit.edu; do \
-        timeout 9s  gpg  --keyserver "${srv}"  --recv-keys ${KEYS}  >/dev/null 2<&1 && \
-            { echo "OK:  ${srv}" && exit 0; } || \
-            { echo "ERR: ${srv} fail=$?"; } ; \
+        timeout 9s  gpg  --keyserver "$srv"  --recv-keys $KEYS  >/dev/null 2<&1 && \
+            { echo "OK:  $srv" && exit 0; } || \
+            { echo "ERR: $srv fail=$?"; } ; \
     done && exit 1
 
-RUN gpg --list-keys && \
-    gpg --list-keys ${KEYS}
+# Print imported keys, but also ensure there's no other keys in the system
+RUN gpg --list-keys | tail -n +3 | tee /tmp/keys.txt && \
+    gpg --list-keys $KEYS | diff - /tmp/keys.txt
 
 
 
@@ -51,25 +60,25 @@ FROM preparer-base AS preparer-release
 ARG VERSION
 
 # Download checksums
-ADD https://bitcoincore.org/bin/bitcoin-core-${VERSION}/SHA256SUMS.asc  ./
+ADD https://bitcoincore.org/bin/bitcoin-core-$VERSION/SHA256SUMS.asc  ./
 
 # Download source code (intentionally different website than checksums)
-ADD https://bitcoin.org/bin/bitcoin-core-${VERSION}/bitcoin-${VERSION}.tar.gz ./
+ADD https://bitcoin.org/bin/bitcoin-core-$VERSION/bitcoin-$VERSION.tar.gz ./
 
 # Verify that hashes are signed with the previously imported key
 RUN gpg --verify SHA256SUMS.asc
 
 # Verify that downloaded source-code archive matches exactly the hash that's provided
-RUN grep " bitcoin-${VERSION}.tar.gz\$" SHA256SUMS.asc | sha256sum -c -
+RUN grep " bitcoin-$VERSION.tar.gz\$" SHA256SUMS.asc | sha256sum -c -
 
 # Extract
-RUN tar -xzf "bitcoin-${VERSION}.tar.gz" && \
-    rm  -f   "bitcoin-${VERSION}.tar.gz"
+RUN tar -xzf "bitcoin-$VERSION.tar.gz" && \
+    rm  -f   "bitcoin-$VERSION.tar.gz"
 
 
 
 #
-## Option #2: Fetch bitcoind source from Github
+## Option #2: Fetch bitcoind source from GitHub
 #
 FROM preparer-base AS preparer-git
 
@@ -78,25 +87,44 @@ ARG VERSION
 RUN apk add --no-cache git
 
 # Fetch the source code at a specific TAG
-RUN git clone  -b "v${VERSION}"  --depth=1  https://github.com/bitcoin/bitcoin.git  "/bitcoin-${VERSION}/"
+RUN git clone  -b "v$VERSION"  --depth=1  https://github.com/bitcoin/bitcoin.git  "/bitcoin-$VERSION/"
 
 # Verify tag, and copy source code to predetermined location on success
-RUN cd "/bitcoin-${VERSION}/" && \
-    git verify-tag "v${VERSION}"
+RUN cd "/bitcoin-$VERSION/" && \
+    git verify-tag "v$VERSION"
 
 
 
 #
-## Alias due to `COPY --from=` not accepting ARGs
+## Alias to go around `COPY` not accepting ARGs in value passed to `--from=`
 #
 FROM preparer-${SOURCE} AS preparer
 
 
 
 #
-## Build bitcoind (regardless on how the source code was obtained)
+## `berkeleydb-prebuilt` downloads a pre-built BerkeleyDB to make sure
+#       the overall build time of this Dockerfile fits within CI limits.
 #
-# NOTE: this stage is _qemu-lated_
+FROM lncm/berkeleydb:db-4.8.30.NC${ARCH:+-${ARCH}} AS berkeleydb-prebuilt
+
+#
+## `berkeleydb-compile` builds BerkeleyDB from sources using script provided in bitcoind repo.
+#
+FROM alpine:${VER_ALPINE} AS berkeleydb-compile
+# TODO: implement ^^
+RUN echo "Not implemented" && exit 1
+
+
+FROM berkeleydb-${BDB_SOURCE} AS berkeleydb
+
+
+
+#
+## `builder` builds Bitcoin Core regardless on how the source, and BDB code were obtained.
+#
+# NOTE: this stage is emulated using QEMU
+# NOTE: `${ARCH:+${ARCH}/}` - if ARCH is set, append `/` to it, leave it empty otherwise
 FROM ${ARCH:+${ARCH}/}alpine:${VER_ALPINE} AS builder
 
 ARG VERSION
@@ -105,7 +133,7 @@ ARG SOURCE
 # Use APK repos over HTTPS. See: https://github.com/gliderlabs/docker-alpine/issues/184
 RUN sed -i 's|http://dl-cdn.alpinelinux.org|https://alpine.global.ssl.fastly.net|g' /etc/apk/repositories
 
-# TODO: Are all of those necessary(?)
+# TODO: Check which dependencies are not necessary here
 RUN apk add --no-cache \
         gnupg \
         autoconf \
@@ -123,21 +151,21 @@ RUN apk add --no-cache \
         zeromq-dev
 
 # Fetch pre-built berkeleydb
-# TODO:  Add optional in-this-file stage for buildling berkeleydb
-COPY  --from=lncm/berkeleydb:db-4.8.30.NC /opt/  /opt/
-
-#
-COPY  --from=preparer /bitcoin-${VERSION}/  /bitcoin-${VERSION}/
+COPY  --from=berkeleydb /opt/  /opt/
 
 # Change to the extracted directory
-WORKDIR /bitcoin-${VERSION}/
+WORKDIR /bitcoin-$VERSION/
 
+# Copy bitcoin source (downloaded & verified in previous stages)
+COPY  --from=preparer /bitcoin-$VERSION/  ./
 
-ENV BITCOIN_PREFIX /opt/bitcoin-${VERSION}
+ENV BITCOIN_PREFIX /opt/bitcoin-$VERSION
 
 RUN ./autogen.sh
+
+# TODO: Try to optimize on passed params
 RUN ./configure LDFLAGS=-L/opt/db4/lib/ CPPFLAGS=-I/opt/db4/include/ \
-    --prefix="${BITCOIN_PREFIX}" \
+    --prefix="$BITCOIN_PREFIX" \
     --disable-man \
     --disable-shared \
     --disable-ccache \
@@ -148,30 +176,25 @@ RUN ./configure LDFLAGS=-L/opt/db4/lib/ CPPFLAGS=-I/opt/db4/include/ \
     --with-utils \
     --with-daemon
 
-RUN make -j$(($(nproc) + 1)) check
+RUN make -j $(( $(nproc) + 1 )) check
 RUN make install
 
-# List installed binaries pre-strip
-RUN ls -lh ${BITCOIN_PREFIX}/bin/
+# List installed binaries pre-strip & strip them
+RUN ls -lh "$BITCOIN_PREFIX/bin/"
+RUN strip -v "$BITCOIN_PREFIX/bin/bitcoin"*
 
-RUN strip -v ${BITCOIN_PREFIX}/bin/bitcoind
-RUN strip -v ${BITCOIN_PREFIX}/bin/bitcoin-cli
-RUN strip -v ${BITCOIN_PREFIX}/bin/bitcoin-wallet
-RUN strip -v ${BITCOIN_PREFIX}/bin/bitcoin-tx
-
-# List installed binaries after stripping
-RUN ls -lh "${BITCOIN_PREFIX}/bin/"
-
-# Print sha256 hashes of final binaries
-RUN sha256sum ${BITCOIN_PREFIX}/bin/bitcoin*
+# List installed binaries post-strip & print their checksums
+RUN ls -lh "$BITCOIN_PREFIX/bin/"
+RUN sha256sum "$BITCOIN_PREFIX/bin/bitcoin"*
 
 
 
 #
-##
+## `final` aggregates build results from previous stages into a necessary minimum
+#       ready to be used, and published to Docker Hub.
 #
+# NOTE: this stage is emulated using QEMU
 # NOTE: `${ARCH:+${ARCH}/}` - if ARCH is set, append `/` to it, leave it empty otherwise
-# NOTE: this stage is _qemu-lated_
 FROM ${ARCH:+${ARCH}/}alpine:${VER_ALPINE} AS final
 
 ARG VERSION
@@ -183,24 +206,24 @@ LABEL maintainer="Damian Mee (@meeDamian)"
 # Use APK repos over HTTPS. See: https://github.com/gliderlabs/docker-alpine/issues/184
 RUN sed -i 's|http://dl-cdn.alpinelinux.org|https://alpine.global.ssl.fastly.net|g' /etc/apk/repositories
 
-# TODO: Are all of those necessary(?)
+# TODO: Check which dependencies are not necessary here
 RUN apk add --no-cache  libressl  libstdc++  boost-thread  boost-chrono  boost-filesystem  libevent  libsodium  libzmq
 
-COPY  --from=builder /opt/bitcoin-${VERSION}/bin/  /usr/local/bin/
+COPY  --from=builder /opt/bitcoin-$VERSION/bin/  /usr/local/bin/
 
 # NOTE: Default GID == UID == 1000
 RUN adduser --disabled-password \
-            --home "${DIR}/" \
+            --home "$DIR/" \
             --gecos "" \
-            "${USER}"
+            "$USER"
 
-USER ${USER}
+USER $USER
 
-# Needed to prevent `VOLUME ${DIR}/.bitcoind/` being created with `root` as owner
-RUN mkdir -p "${DIR}/.bitcoin/"
+# Prevents `VOLUME $DIR/.bitcoind/` being created as owned by `root`
+RUN mkdir -p "$DIR/.bitcoin/"
 
 # Expose volume containing all `bitcoind` data
-VOLUME ${DIR}/.bitcoin/
+VOLUME $DIR/.bitcoin/
 
 # REST interface
 EXPOSE 8080
