@@ -106,7 +106,7 @@ FROM preparer-${SOURCE} AS preparer
 ## `berkeleydb-prebuilt` downloads a pre-built BerkeleyDB to make sure
 #       the overall build time of this Dockerfile fits within CI limits.
 #
-FROM lncm/berkeleydb:db-4.8.30.NC${ARCH:+-${ARCH}} AS berkeleydb-prebuilt
+FROM lncm/berkeleydb:v4.8.30.NC${ARCH:+-${ARCH}} AS berkeleydb-prebuilt
 
 #
 ## `berkeleydb-compile` builds BerkeleyDB from sources using script provided in bitcoind repo.

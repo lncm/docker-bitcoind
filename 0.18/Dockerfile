@@ -106,7 +106,7 @@ FROM preparer-${SOURCE} AS preparer
 ## `berkeleydb-prebuilt` downloads a pre-built BerkeleyDB to make sure
 #       the overall build time of this Dockerfile fits within CI limits.
 #
-FROM lncm/berkeleydb:db-4.8.30.NC${ARCH:+-${ARCH}} AS berkeleydb-prebuilt
+FROM lncm/berkeleydb:v4.8.30.NC${ARCH:+-${ARCH}} AS berkeleydb-prebuilt
 
 #
 ## `berkeleydb-compile` builds BerkeleyDB from source using script provided in bitcoind repo.
@@ -163,7 +163,7 @@ ENV BITCOIN_PREFIX /opt/bitcoin-$VERSION
 
 # Disable emoji test failing on Alpine for unrelated reasons: "missing locale".  Not important.
 #   https://github.com/bitcoin/bitcoin/issues/14948
-COPY ../0.xx/skip-fs-test-of-utf8.patch .
+COPY ./skip-fs-test-of-utf8.patch .
 RUN patch -p0 < skip-fs-test-of-utf8.patch
 
 # NOTE: no idea what these do, but they seem necessary
