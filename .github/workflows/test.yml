@@ -12,6 +12,7 @@ jobs:
     runs-on: ubuntu-18.04
 
     env:
+      APP: bitcoind
       QEMU_VERSION: v4.2.0
       DOCKER_BUILDKIT: 1
 
@@ -19,44 +20,50 @@ jobs:
       fail-fast: false
       matrix:
         subver:
-#          - 0.16
-#          - 0.17
+          - 0.16
+          - 0.17
           - 0.18
-#          - 0.19
+          - 0.19
 
         arch:
           - amd64
-          - arm64v8
           - arm32v7
+          - arm64v8
 
     steps:
       - uses: actions/checkout@v2.0.0
 
-      # NOTE: trims `v8` suffix from `arm64v8`
+      # NOTE: trim `v8` suffix from `arm64v8`
       - name: Register self-compiled qemu
         if: matrix.arch != 'amd64'
         env:
           ARCH: ${{ matrix.arch }}
         run: docker run --rm --privileged meedamian/simple-qemu:$QEMU_VERSION-${ARCH%v8} -p yes
 
-      - name: Build Bitcoind
+      - name: Build ${{ env.APP }}
         run: >
           docker build "${{ matrix.subver }}/"
-          --build-arg="ARCH=${{ matrix.arch }}"
-          --tag=bitcoind
+          --build-arg "ARCH=${{ matrix.arch }}"
+          --tag "$APP"
 
-      - name: Print versions, and make sure binaries are runnable
+      - name: Make sure binaries run
         run: |
-          docker run --rm  --entrypoint=uname   bitcoind  -a
+          run() {
+            BINARY=$1
+            FLAG=${2:-"--version"}
 
-          docker run --rm  bitcoind  --version
+            printf "\n==> %s %s <==\n"  "$BINARY"  "$FLAG"
+            docker run --rm  --entrypoint "$BINARY"  "$APP"  "$FLAG"  | head -n 1
+          }
 
-          docker run --rm  --entrypoint=bitcoin-cli  bitcoind  --version
-          docker run --rm  --entrypoint=bitcoin-tx   bitcoind  --help
+          run  uname -a
+          run  bitcoind
+          run  bitcoin-cli
+          run  bitcoin-tx --help
 
           MINOR="${{ matrix.subver }}"
           if [ "${MINOR#0.}" -lt "18" ]; then
             exit 0
           fi
 
-          docker run --rm bitcoin-wallet --help
+          run  bitcoin-wallet --help
