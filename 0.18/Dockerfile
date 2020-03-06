@@ -163,7 +163,7 @@ ENV BITCOIN_PREFIX /opt/bitcoin-$VERSION
 
 # Disable emoji test failing on Alpine for unrelated reasons: "missing locale".  Not important.
 #   https://github.com/bitcoin/bitcoin/issues/14948
-COPY ./skip-fs-test-of-utf8.patch .
+COPY skip-fs-test-of-utf8.patch .
 RUN patch -p0 < skip-fs-test-of-utf8.patch
 
 # NOTE: no idea what these do, but they seem necessary
