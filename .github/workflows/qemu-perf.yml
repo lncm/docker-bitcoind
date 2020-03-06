@@ -14,6 +14,7 @@ jobs:
     runs-on: ubuntu-18.04
 
     env:
+      APP: bitcoind
       DOCKER_BUILDKIT: 1
       SUBVER: 0.18
 
@@ -30,41 +31,47 @@ jobs:
 
         arch:
           - arm32v7
-          - arm64
+          - arm64v8
 
     steps:
-      - uses: actions/checkout@v1.0.0
+      - uses: actions/checkout@v2
 
       - name: Log start time
         run: touch /tmp/start
 
+      # NOTE: trim `v8` suffix from `arm64v8`
       - name: Register self-compiled qemu
-        run: docker run --rm --privileged "meedamian/simple-qemu:${{ matrix.qemu }}-${{ matrix.arch }}" -p yes
-
-      # Alter `Dockerfile` to reference used architecture/image combos explicitly.  Places changed are:
-      #   * all `FROM` statements (ex. `FROM alpine…` -> `FROM arm64v8/alpine…`)
-      #   * BerkeleyDB `COPY` statement (`COPY --from=lncm/berkeleydb:db-4.8.30.NC` gets suffixed with ex. `-arm64`)
-      # `sed` `--expression`s change it in the following way:
-      #   1st: Matches all occurrences of `FROM alpine`, and injects arch prefix before `alpine`, ex: `arm64v8/alpine`
-      #   2nd: Matches BDB version, and appends "-${{matrix.arch}}" to it (note that `&` represents match).
-      - name: Change Dockerfile to use arch-specific base images
-        run: |
-          CPU=${{ matrix.arch }}
-          if [[ "$CPU" == "arm64" ]]; then
-            CPU="arm64v8"
-          fi
-
-          sed -i "$SUBVER/Dockerfile" \
-            -e "s|^FROM alpine|FROM $CPU/alpine|g" \
-            -e "s|db-4.8.30.NC|&-${{ matrix.arch }}|g"
+        if: matrix.arch != 'amd64'
+        env:
+          ARCH: ${{ matrix.arch }}
+        run: docker run --rm --privileged "meedamian/simple-qemu:${{ matrix.qemu }}-${ARCH%v8}" -p yes
 
       - name: Build container
-        run: docker build  -t bitcoind  ${SUBVER}/
+        run: >
+          docker build "$SUBVER/"
+          --build-arg "ARCH=${{ matrix.arch }}"
+          --tag       "$APP"
 
-      - name: Print Bitcoind version
+      - name: Make sure binaries run
         run: |
-          docker run --rm  --entrypoint=uname  bitcoind  -a
-          docker run --rm                      bitcoind  --version
+          run() {
+            BINARY=$1
+            FLAG=${2:-"--version"}
+
+            printf "\n==> %s %s <==\n"  "$BINARY"  "$FLAG"
+            docker run --rm  --entrypoint "$BINARY"  "$APP"  "$FLAG"  | head -n 1
+          }
+
+          run  uname -a
+          run  bitcoind
+          run  bitcoin-cli
+          run  bitcoin-tx --help
+
+          if [ "${SUBVER#0.}" -lt "18" ]; then
+            exit 0
+          fi
+
+          run  bitcoin-wallet --help
 
       - name: Calculate execution time
         run: |

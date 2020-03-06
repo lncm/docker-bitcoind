@@ -22,7 +22,7 @@ jobs:
           - arm64v8
 
     steps:
-      - uses: actions/checkout@v2.0.0
+      - uses: actions/checkout@v2
 
       - name: Setup environment
         run: |
@@ -37,7 +37,7 @@ jobs:
         if: matrix.arch != 'amd64'
         env:
           ARCH: ${{ matrix.arch }}
-        run: docker run --rm --privileged meedamian/simple-qemu:$QEMU_VERSION-${ARCH%v8} -p yes
+        run: docker run --rm --privileged "meedamian/simple-qemu:$QEMU_VERSION-${ARCH%v8}" -p yes
 
       - name: Build Bitcoind ${{ env.VERSION }}
         run: >
@@ -95,7 +95,7 @@ jobs:
       APP: bitcoind
 
     steps:
-      - uses: actions/checkout@v1.0.0
+      - uses: actions/checkout@v2
 
       - name: Setup environment
         run: |
@@ -151,6 +151,7 @@ jobs:
 
       - name: Push manifest
         run: docker manifest push "$SLUG:$VERSION"
+
 
       - name: Upload images to Github Release
         uses: meeDamian/github-release@v1.0.1

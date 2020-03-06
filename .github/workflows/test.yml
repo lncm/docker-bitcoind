@@ -31,20 +31,20 @@ jobs:
           - arm64v8
 
     steps:
-      - uses: actions/checkout@v2.0.0
+      - uses: actions/checkout@v2
 
       # NOTE: trim `v8` suffix from `arm64v8`
       - name: Register self-compiled qemu
         if: matrix.arch != 'amd64'
         env:
           ARCH: ${{ matrix.arch }}
-        run: docker run --rm --privileged meedamian/simple-qemu:$QEMU_VERSION-${ARCH%v8} -p yes
+        run: docker run --rm --privileged "meedamian/simple-qemu:$QEMU_VERSION-${ARCH%v8}" -p yes
 
       - name: Build ${{ env.APP }}
         run: >
           docker build "${{ matrix.subver }}/"
           --build-arg "ARCH=${{ matrix.arch }}"
-          --tag "$APP"
+          --tag       "$APP"
 
       - name: Make sure binaries run
         run: |
