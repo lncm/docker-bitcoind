@@ -167,7 +167,7 @@ COPY ./skip-fs-test-of-utf8.patch .
 RUN patch -p0 < skip-fs-test-of-utf8.patch
 
 # NOTE: no idea what these do, but they seem necessary
-#   taken from: https://github.com/ruimarinho/docker-bitcoin-core/blob/master/0.16/alpine/Dockerfile#L67-L69
+#   taken from: https://github.com/ruimarinho/docker-bitcoin-core/blob/master/0.18/alpine/Dockerfile#L67-L69
 RUN sed -i '/AC_PREREQ/a\AR_FLAGS=cr' src/univalue/configure.ac
 RUN sed -i '/AX_PROG_CC_FOR_BUILD/a\AR_FLAGS=cr' src/secp256k1/configure.ac
 RUN sed -i s:sys/fcntl.h:fcntl.h: src/compat.h
