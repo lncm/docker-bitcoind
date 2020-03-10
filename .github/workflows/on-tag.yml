@@ -99,7 +99,6 @@ jobs:
           echo ::set-env name=DOCKER_USER::"${GITHUB_ACTOR,,}"
           echo ::set-env name=SLUG::"$(echo ${GITHUB_REPOSITORY,,} | sed 's/docker-//')"
           echo ::set-env name=VERSION::"$(echo "$GITHUB_REF" | awk -F/ '{print $NF}')"
-          echo ::set-env name=BITCOIND_VERSION::"${VERSION#v}"
 
       - name: Enable manifests
         run: |
@@ -155,7 +154,7 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           name: ${{ env.VERSION }}
-          body: "This release packages `bitcoind` to be on par with https://github.com/bitcoin/bitcoin/releases/tag/${{ env.BITCOIND_VERSION }}"
+          body: "This release packages `bitcoind` to be on par with https://github.com/bitcoin/bitcoin/releases/tag/${{ env.VERSION }}"
           gzip: false
           files: images/*
 
