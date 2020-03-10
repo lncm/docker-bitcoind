@@ -46,24 +46,23 @@ jobs:
           --build-arg "ARCH=${{ matrix.arch }}"
           --tag       "$APP"
 
-      - name: Make sure binaries run
+      - name: Make sure binaries can be run
+        env:
+          MINOR: ${{ matrix.subver }}
         run: |
           run() {
-            BINARY=$1
-            FLAG=${2:-"--version"}
+            ENTRYPOINT="${1:-$APP}"; shift
+            ARGS=${*:-"--version"}
 
-            printf "\n==> %s %s <==\n"  "$BINARY"  "$FLAG"
-            docker run --rm  --entrypoint "$BINARY"  "$APP"  "$FLAG"  | head -n 1
+            printf "\n$ %s %s\n"  "$ENTRYPOINT"  "$ARGS"
+            docker run --rm  --entrypoint "$ENTRYPOINT"  "$APP"  $ARGS
           }
 
           run  uname -a
           run  bitcoind
           run  bitcoin-cli
-          run  bitcoin-tx --help
+          run  bitcoin-tx --help | head -n 1
 
-          MINOR="${{ matrix.subver }}"
-          if [ "${MINOR#0.}" -lt "18" ]; then
-            exit 0
+          if [ "${MINOR#0.}" -ge "18" ]; then
+            run  bitcoin-wallet --help | head -n 1
           fi
-
-          run  bitcoin-wallet --help

@@ -9,17 +9,17 @@ jobs:
     name: Build Bitcoind
     runs-on: ubuntu-18.04
 
-    env:
-      APP: bitcoind
-      QEMU_VERSION: v4.2.0
-      DOCKER_BUILDKIT: 1
-
     strategy:
       matrix:
         arch:
           - amd64
           - arm32v7
           - arm64v8
+
+    env:
+      APP: bitcoind
+      QEMU_VERSION: v4.2.0
+      DOCKER_BUILDKIT: 1
 
     steps:
       - uses: actions/checkout@v2
@@ -39,40 +39,39 @@ jobs:
           ARCH: ${{ matrix.arch }}
         run: docker run --rm --privileged "meedamian/simple-qemu:$QEMU_VERSION-${ARCH%v8}" -p yes
 
-      - name: Build Bitcoind ${{ env.VERSION }}
+      - name: Build ${{ env.APP }} ${{ env.VERSION }}
         run: >
-          docker build  "$DIR/"
+          docker build "$DIR/"
           --build-arg "VERSION=$VERSION"
           --build-arg "ARCH=${{ matrix.arch }}"
           --tag       "$APP"
 
       - name: Make sure binaries can be run
+        env:
+          MINOR: ${{ env.DIR }}
         run: |
           run() {
-            BINARY=$1
-            FLAG=${2:-"--version"}
+            ENTRYPOINT="${1:-$APP}"; shift
+            ARGS=${*:-"--version"}
 
-            printf "\n==> %s %s <==\n"  "$BINARY"  "$FLAG"
-            docker run --rm  --entrypoint "$BINARY"  "$APP"  "$FLAG"  | head -n 1
+            printf "\n$ %s %s\n"  "$ENTRYPOINT"  "$ARGS"
+            docker run --rm  --entrypoint "$ENTRYPOINT"  "$APP"  $ARGS
           }
 
           run  uname -a
-          run  bitcoind
+          run  bitcoind | head -n 1
           run  bitcoin-cli
-          run  bitcoin-tx --help
+          run  bitcoin-tx --help | head -n 1
 
-          MINOR="${{ matrix.subver }}"
-          if [ "${MINOR#0.}" -le "17" ]; then
-            exit 0
+          if [ "${MINOR#0.}" -ge "18" ]; then
+            run  bitcoin-wallet --help | head -n 1
           fi
-
-          run  bitcoin-wallet --help
 
       - name: Save built image into a .tgz file
         run: |
           mkdir -p images/
 
-          docker tag  bitcoind  "$APP:${{ matrix.arch }}"
+          docker tag  "$APP"  "$APP:${{ matrix.arch }}"
           docker save "$APP:${{ matrix.arch }}" | gzip > "images/$APP-${{ matrix.arch }}.tgz"
 
       - name: Print sha256sum of built image
@@ -86,7 +85,7 @@ jobs:
 
 
   docker-hub-push:
-    name: Tag & deploy to Docker Hub.  Only after successful build and on a git-tag push
+    name: Tag & deploy to Docker Hub.  Only after successful build and on a git-tag push.
 
     runs-on: ubuntu-18.04
     needs: build
