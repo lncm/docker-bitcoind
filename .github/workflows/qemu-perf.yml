@@ -1,22 +1,20 @@
 name: Perf-check qemu versions
 
 on:
+  push:
+    branches: [ 'perf' ]
   schedule:
     - cron: '2 1 * * *'
 
-  push:
-    branches:
-      - 'perf'
-
 jobs:
   build:
-    name: Build
+    name: Build & measure time
     runs-on: ubuntu-18.04
 
     env:
       APP: bitcoind
       DOCKER_BUILDKIT: 1
-      SUBVER: 0.18
+      MINOR: 0.19
 
     strategy:
       fail-fast: false
@@ -25,6 +23,7 @@ jobs:
           - v3.1.0
           - v3.1.1
           - v4.0.0
+          - v4.0.1
           - v4.1.0
           - v4.1.1
           - v4.2.0
@@ -39,16 +38,12 @@ jobs:
       - name: Log start time
         run: touch /tmp/start
 
-      # NOTE: trim `v8` suffix from `arm64v8`
       - name: Register self-compiled qemu
-        if: matrix.arch != 'amd64'
-        env:
-          ARCH: ${{ matrix.arch }}
-        run: docker run --rm --privileged "meedamian/simple-qemu:${{ matrix.qemu }}-${ARCH%v8}" -p yes
+        run: docker run --rm --privileged "meedamian/simple-qemu:${{ matrix.qemu }}-${{ matrix.arch }}" -p yes
 
       - name: Build container
         run: >
-          docker build "$SUBVER/"
+          docker build "$MINOR/"
           --build-arg "ARCH=${{ matrix.arch }}"
           --tag       "$APP"
 
@@ -67,7 +62,7 @@ jobs:
           run  bitcoin-cli
           run  bitcoin-tx --help
 
-          if [ "${SUBVER#0.}" -lt "18" ]; then
+          if [ "${MINOR#0.}" -lt "18" ]; then
             exit 0
           fi
 
@@ -122,14 +117,14 @@ jobs:
         run: |
           touch ./all-stats
 
-          echo "| version | arm32v7 | arm64" >> ./all-stats
-          echo "|:-------:|--------:|-----:" >> ./all-stats
+          echo "| version | arm32v7 | arm64v8" >> ./all-stats
+          echo "|:-------:|--------:|--------:" >> ./all-stats
 
           for ver in $(ls ./stats/* | awk -F/ '{print $NF}' | cut -d- -f1 | uniq); do
             line="| **${ver}**"
 
-            line="$line | $(cat ./stats/$ver-arm32v7 | tr -d '\n')"
-            line="$line | $(cat ./stats/$ver-arm64 | tr -d '\n')"
+            line="$line | $(cat "./stats/$ver-arm32v7" | tr -d '\n')"
+            line="$line | $(cat "./stats/$ver-arm64v8" | tr -d '\n')"
 
             echo "$line" >> ./all-stats
           done
