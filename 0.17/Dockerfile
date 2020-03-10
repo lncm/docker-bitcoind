@@ -109,7 +109,7 @@ FROM preparer-${SOURCE} AS preparer
 FROM lncm/berkeleydb:v4.8.30.NC${ARCH:+-${ARCH}} AS berkeleydb-prebuilt
 
 #
-## `berkeleydb-compile` builds BerkeleyDB from source using script provided in bitcoind repo.
+## `berkeleydb-compile` builds BerkeleyDB from sources using script provided in bitcoind repo.
 #
 FROM alpine:${VER_ALPINE} AS berkeleydb-compile
 # TODO: implement ^^
@@ -135,7 +135,6 @@ RUN sed -i 's|http://dl-cdn.alpinelinux.org|https://alpine.global.ssl.fastly.net
 
 # TODO: Check which dependencies are not necessary here
 RUN apk add --no-cache \
-        gnupg \
         autoconf \
         automake \
         boost-dev \
@@ -162,7 +161,7 @@ COPY  --from=preparer /bitcoin-$VERSION/  ./
 ENV BITCOIN_PREFIX /opt/bitcoin-$VERSION
 
 # NOTE: no idea what these do, but they seem necessary
-#   taken from: https://github.com/ruimarinho/docker-bitcoin-core/blob/master/0.16/alpine/Dockerfile#L67-L69
+#   taken from: https://github.com/ruimarinho/docker-bitcoin-core/blob/master/0.17/alpine/Dockerfile#L67-L69
 RUN sed -i '/AC_PREREQ/a\AR_FLAGS=cr' src/univalue/configure.ac
 RUN sed -i '/AX_PROG_CC_FOR_BUILD/a\AR_FLAGS=cr' src/secp256k1/configure.ac
 RUN sed -i s:sys/fcntl.h:fcntl.h: src/compat.h
@@ -213,7 +212,15 @@ LABEL maintainer="Damian Mee (@meeDamian)"
 RUN sed -i 's|http://dl-cdn.alpinelinux.org|https://alpine.global.ssl.fastly.net|g' /etc/apk/repositories
 
 # TODO: Check which dependencies are not necessary here
-RUN apk add --no-cache  libressl  libstdc++  boost-thread  boost-chrono  boost-filesystem  libevent  libsodium  libzmq
+RUN apk add --no-cache \
+        boost-chrono \
+        boost-filesystem \
+        boost-thread \
+        libevent \
+        libressl \
+        libsodium \
+        libstdc++ \
+        libzmq
 
 COPY  --from=builder /opt/bitcoin-$VERSION/bin/  /usr/local/bin/
 

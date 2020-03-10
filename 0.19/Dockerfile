@@ -135,7 +135,6 @@ RUN sed -i 's|http://dl-cdn.alpinelinux.org|https://alpine.global.ssl.fastly.net
 
 # TODO: Check which dependencies are not necessary here
 RUN apk add --no-cache \
-        gnupg \
         autoconf \
         automake \
         boost-dev \
@@ -176,7 +175,7 @@ RUN ./configure LDFLAGS=-L/opt/db4/lib/ CPPFLAGS=-I/opt/db4/include/ \
     --with-utils \
     --with-daemon
 
-RUN make -j $(( $(nproc) + 1 )) check
+RUN make -j$(( $(nproc) + 1 )) check
 RUN make install
 
 # List installed binaries pre-strip & strip them
@@ -207,7 +206,15 @@ LABEL maintainer="Damian Mee (@meeDamian)"
 RUN sed -i 's|http://dl-cdn.alpinelinux.org|https://alpine.global.ssl.fastly.net|g' /etc/apk/repositories
 
 # TODO: Check which dependencies are not necessary here
-RUN apk add --no-cache  libressl  libstdc++  boost-thread  boost-chrono  boost-filesystem  libevent  libsodium  libzmq
+RUN apk add --no-cache \
+        boost-chrono \
+        boost-filesystem \
+        boost-thread \
+        libevent \
+        libressl \
+        libsodium \
+        libstdc++ \
+        libzmq
 
 COPY  --from=builder /opt/bitcoin-$VERSION/bin/  /usr/local/bin/
 

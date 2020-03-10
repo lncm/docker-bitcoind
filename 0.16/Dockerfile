@@ -141,7 +141,6 @@ RUN apk add --no-cache \
         build-base \
         chrpath \
         file \
-        gnupg \
         libevent-dev \
         libressl \
         libressl-dev \
@@ -214,15 +213,15 @@ RUN sed -i 's|http://dl-cdn.alpinelinux.org|https://alpine.global.ssl.fastly.net
 
 # TODO: Check which dependencies are not necessary here
 RUN apk add --no-cache \
-    boost-chrono \
-    boost-filesystem \
-    boost-program_options \
-    boost-thread \
-    libevent \
-    libressl \
-    libsodium \
-    libstdc++ \
-    libzmq
+        boost-chrono \
+        boost-filesystem \
+        boost-program_options \
+        boost-thread \
+        libevent \
+        libressl \
+        libsodium \
+        libstdc++ \
+        libzmq
 
 COPY  --from=builder /opt/bitcoin-$VERSION/bin/  /usr/local/bin/
 
