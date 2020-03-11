@@ -109,7 +109,7 @@ FROM preparer-${SOURCE} AS preparer
 FROM lncm/berkeleydb:v4.8.30.NC${ARCH:+-${ARCH}} AS berkeleydb-prebuilt
 
 #
-## `berkeleydb-compile` builds BerkeleyDB from sources using script provided in bitcoind repo.
+## `berkeleydb-compile` builds BerkeleyDB from source using script provided in bitcoind repo.
 #
 FROM alpine:${VER_ALPINE} AS berkeleydb-compile
 # TODO: implement ^^
