@@ -182,7 +182,8 @@ RUN ./configure LDFLAGS=-L/opt/db4/lib/ CPPFLAGS=-I/opt/db4/include/ \
     --enable-static \
     --enable-reduce-exports \
     --without-gui \
-    --without-libs \
+    # --without-libs \ # NOTE: Fix necessary for v0.18.1
+    --with-libs \
     --with-utils \
     --with-daemon
 
