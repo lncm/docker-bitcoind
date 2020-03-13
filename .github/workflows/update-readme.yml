@@ -11,6 +11,7 @@ jobs:
   sync:
     name: Update README to Docker Hub
     runs-on: ubuntu-18.04
+
     steps:
       - uses: actions/checkout@v2
 

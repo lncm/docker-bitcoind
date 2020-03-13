@@ -1,5 +1,8 @@
 name: Build bitcoind on push, or PR to master
 
+env:
+  APP: bitcoind
+
 on:
   push:
     branches: [ 'master' ]
@@ -8,13 +11,8 @@ on:
 
 jobs:
   build:
-    name: Build Bitcoind
+    name: Build ${{ env.APP }}
     runs-on: ubuntu-18.04
-
-    env:
-      APP: bitcoind
-      QEMU_VERSION: v4.2.0
-      DOCKER_BUILDKIT: 1
 
     strategy:
       fail-fast: false
@@ -30,6 +28,10 @@ jobs:
           - arm32v7
           - arm64v8
 
+    env:
+      QEMU_VERSION: v4.2.0
+      DOCKER_BUILDKIT: 1
+
     steps:
       - uses: actions/checkout@v2
 
@@ -43,8 +45,12 @@ jobs:
           --build-arg "ARCH=${{ matrix.arch }}"
           --tag       "$APP"
 
-      - name: Make sure binaries can be run
+      - name: Show built image details
+        run: docker images "$APP"
+
+      - name: Run sanity checks
         env:
+          DIR: /usr/local/bin
           MINOR: ${{ matrix.subver }}
         run: |
           run() {
@@ -55,12 +61,18 @@ jobs:
             docker run --rm  --entrypoint "$ENTRYPOINT"  "$APP"  $ARGS
           }
 
-          run  uname -a
-          run  bitcoind
-          run  bitcoin-cli
-          run  bitcoin-tx --help | head -n 1
+          docker inspect "$APP" | jq '.'
+          printf "\n"
+
+          run bitcoind | head -n 1
+          run bitcoin-cli
+          run bitcoin-tx --help | head -n 1
 
           # If version higher, or equal than v0.18.0, also run `bitcoin-wallet` binary
           if [ "${MINOR#0.}" -ge "18" ]; then
-            run  bitcoin-wallet --help | head -n 1
+            run bitcoin-wallet --help | head -n 1
           fi
+
+          run uname -a
+          run cat /etc/os-release
+          run sha256sum "$DIR/bitcoind" "$DIR/bitcoin-cli"

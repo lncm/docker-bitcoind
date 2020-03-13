@@ -1,5 +1,8 @@
 name: Perf-check qemu versions
 
+env:
+  APP: bitcoind
+
 on:
   push:
     branches: [ 'perf' ]
@@ -12,7 +15,6 @@ jobs:
     runs-on: ubuntu-18.04
 
     env:
-      APP: bitcoind
       DOCKER_BUILDKIT: 1
       MINOR: 0.19
 
@@ -104,8 +106,10 @@ jobs:
 
   comment:
     name: Report result
+
     needs: build
     runs-on: ubuntu-18.04
+
     steps:
       - name: Download perf stats
         uses: actions/download-artifact@v1.0.0
