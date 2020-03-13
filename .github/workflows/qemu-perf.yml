@@ -132,7 +132,7 @@ jobs:
 
           echo ::set-env name=RESULTS::"$(cat ./all-stats | sed -z 's/\n/\\n/g')"
 
-      - uses: actions/github-script@0.4.0
+      - uses: actions/github-script@0.8.0
         with:
           github-token: ${{ secrets.GITHUB_TOKEN_NOEXPIRE }}
           script: |
