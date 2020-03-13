@@ -1,4 +1,7 @@
-name: Build & deploy Bitcoind
+name: Build & deploy on git tag push
+
+env:
+  APP: bitcoind
 
 on:
   push:
@@ -17,7 +20,6 @@ jobs:
           - arm64v8
 
     env:
-      APP: bitcoind
       QEMU_VERSION: v4.2.0
       DOCKER_BUILDKIT: 1
 
@@ -87,9 +89,6 @@ jobs:
 
     runs-on: ubuntu-18.04
     needs: build
-
-    env:
-      APP: bitcoind
 
     steps:
       - uses: actions/checkout@v2
