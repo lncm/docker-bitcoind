@@ -37,14 +37,7 @@ RUN sed -i 's|http://dl-cdn.alpinelinux.org|https://alpine.global.ssl.fastly.net
 RUN apk add --no-cache  gnupg
 
 ENV KEYS 01EA5486DE18A882D4C2684590C8019E36C2E964
-
-# Try to fetch keys from keyservers listed below.  On first success terminate with `exit 0`.  If loop is not interrupted,
-#   it means all attempts failed, and `exit 1` is called.
-RUN for srv in  keyserver.ubuntu.com  hkp://p80.pool.sks-keyservers.net:80  ha.pool.sks-keyservers.net  keyserver.pgp.com  pgp.mit.edu; do \
-        timeout 9s  gpg  --keyserver "$srv"  --recv-keys $KEYS  >/dev/null 2<&1 && \
-            { echo "OK:  $srv" && exit 0; } || \
-            { echo "ERR: $srv fail=$?"; } ; \
-    done && exit 1
+RUN timeout 16s  gpg  --keyserver keyserver.ubuntu.com  --recv-keys $KEYS
 
 # Print imported keys, but also ensure there's no other keys in the system
 RUN gpg --list-keys | tail -n +3 | tee /tmp/keys.txt && \
