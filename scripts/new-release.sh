@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-set -eo pipefail
+set -e
 
 #
 ## Given version, this script creates & pushes a relevant git-tag.
