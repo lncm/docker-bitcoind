@@ -132,19 +132,15 @@ jobs:
     runs-on: ubuntu-18.04
     needs: build
 
+    env:
+      DOCKER_CLI_EXPERIMENTAL: enabled
+
     steps:
       - name: Setup environment
         run: |
           echo ::set-env name=SLUG::"$(echo ${GITHUB_REPOSITORY,,} | sed 's/docker-//')"
           echo ::set-env name=VERSION::"$(echo "$GITHUB_REF" | sed -E "s|$TAG_FMT|\2|")"
           echo ::set-env name=BUILD::"$(echo "$GITHUB_REF" | sed -E "s|$TAG_FMT|\4|")"
-
-      - name: Enable manifests
-        run: |
-          mkdir -p ~/.docker
-          echo '{ "experimental": "enabled" }' > ~/.docker/config.json
-          sudo systemctl restart docker
-          docker version
 
       - name: Download all build artifacts
         uses: actions/download-artifact@v1.0.0
