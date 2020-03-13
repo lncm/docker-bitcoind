@@ -1,21 +1,22 @@
 name: Perf-check qemu versions
 
+env:
+  APP: bitcoind
+
 on:
+  push:
+    branches: [ 'perf' ]
   schedule:
     - cron: '2 1 * * *'
 
-  push:
-    branches:
-      - 'perf'
-
 jobs:
   build:
-    name: Build
+    name: Build & measure time
     runs-on: ubuntu-18.04
 
     env:
       DOCKER_BUILDKIT: 1
-      SUBVER: 0.19
+      MINOR: 0.19
 
     strategy:
       fail-fast: false
@@ -24,47 +25,49 @@ jobs:
           - v3.1.0
           - v3.1.1
           - v4.0.0
+          - v4.0.1
           - v4.1.0
           - v4.1.1
           - v4.2.0
 
         arch:
           - arm32v7
-          - arm64
+          - arm64v8
 
     steps:
-      - uses: actions/checkout@v1.0.0
+      - uses: actions/checkout@v2
 
       - name: Log start time
         run: touch /tmp/start
 
       - name: Register self-compiled qemu
-        run: docker run --rm --privileged meedamian/simple-qemu:${{matrix.qemu}}-${{matrix.arch}} -p yes
-
-      # Alter `Dockerfile` to reference used architecture/image combos explicitly.  Places changed are:
-      #   * all `FROM` statements (ex. `FROM alpine…` -> `FROM arm64v8/alpine…`)
-      #   * BerkeleyDB `COPY` statement (`COPY --from=lncm/berkeleydb:db-4.8.30.NC` gets suffixed with ex. `-arm64`)
-      # `sed` `--expression`s change it in the following way:
-      #   1st: Matches all occurrences of `FROM alpine`, and injects arch prefix before `alpine`, ex: `arm64v8/alpine`
-      #   2nd: Matches BDB version, and appends "-${{matrix.arch}}" to it (note that `&` represents match).
-      - name: Change Dockerfile to use arch-specific base images
-        run: |
-          CPU=${{matrix.arch}}
-          if [[ "${CPU}" == "arm64" ]]; then
-            CPU="arm64v8"
-          fi
-
-          sed -i ${SUBVER}/Dockerfile \
-            -e "s|^FROM alpine|FROM $CPU/alpine|g" \
-            -e "s|db-4.8.30.NC|&-${{matrix.arch}}|g"
+        run: docker run --rm --privileged "meedamian/simple-qemu:${{ matrix.qemu }}-${{ matrix.arch }}" -p yes
 
       - name: Build container
-        run: docker build  -t bitcoind  ${SUBVER}/
+        run: >
+          docker build "$MINOR/"
+          --build-arg "ARCH=${{ matrix.arch }}"
+          --tag       "$APP"
 
-      - name: Print Bitcoind version
+      - name: Make sure binaries can be run
         run: |
-          docker run --rm  --entrypoint=uname  bitcoind  -a
-          docker run --rm                      bitcoind  --version
+          run() {
+            ENTRYPOINT="${1:-$APP}"; shift
+            ARGS=${*:-"--version"}
+
+            printf "\n$ %s %s\n"  "$ENTRYPOINT"  "$ARGS"
+            docker run --rm  --entrypoint "$ENTRYPOINT"  "$APP"  $ARGS
+          }
+
+          run  uname -a
+          run  bitcoind
+          run  bitcoin-cli
+          run  bitcoin-tx --help | head -n 1
+
+          # If version higher, or equal than v0.18.0, also run `bitcoin-wallet` binary
+          if [ "${MINOR#0.}" -ge "18" ]; then
+            run  bitcoin-wallet --help | head -n 1
+          fi
 
       - name: Calculate execution time
         run: |
@@ -84,16 +87,16 @@ jobs:
           days=$(( DIFF / DAY ))
 
           OUT=""
-          if [[ "${days}" -ne "0" ]]; then
+          if [[ "$days" -ne "0" ]]; then
             # Days-long jobs shouldn't happen, but 🤷🏻‍♂️
             OUT="${days}d "
           fi
 
-          OUT="${OUT}${hours}h:${mins}m:${secs}s"
+          OUT="$OUT${hours}h:${mins}m:${secs}s"
 
           mkdir -p stat
 
-          echo "${OUT}" > stat/${{matrix.qemu}}-${{matrix.arch}}
+          echo "$OUT" > stat/${{ matrix.qemu }}-${{ matrix.arch }}
 
       - name: Save execution time as an artifact
         uses: actions/upload-artifact@v1.0.0
@@ -103,8 +106,10 @@ jobs:
 
   comment:
     name: Report result
+
     needs: build
     runs-on: ubuntu-18.04
+
     steps:
       - name: Download perf stats
         uses: actions/download-artifact@v1.0.0
@@ -115,25 +120,25 @@ jobs:
         run: |
           touch ./all-stats
 
-          echo "| version | arm32v7 | arm64" >> ./all-stats
-          echo "|:-------:|--------:|-----:" >> ./all-stats
+          echo "| version | arm32v7 | arm64v8" >> ./all-stats
+          echo "|:-------:|--------:|--------:" >> ./all-stats
 
           for ver in $(ls ./stats/* | awk -F/ '{print $NF}' | cut -d- -f1 | uniq); do
             line="| **${ver}**"
 
-            line="${line} | $(cat ./stats/${ver}-arm32v7 | tr -d '\n')"
-            line="${line} | $(cat ./stats/${ver}-arm64 | tr -d '\n')"
+            line="$line | $(cat "./stats/$ver-arm32v7" | tr -d '\n')"
+            line="$line | $(cat "./stats/$ver-arm64v8" | tr -d '\n')"
 
-            echo "${line}" >> ./all-stats
+            echo "$line" >> ./all-stats
           done
 
           cat ./all-stats
 
           echo ::set-env name=RESULTS::"$(cat ./all-stats | sed -z 's/\n/\\n/g')"
 
-      - uses: actions/github-script@0.4.0
+      - uses: actions/github-script@0.8.0
         with:
-          github-token: ${{secrets.GITHUB_TOKEN_NOEXPIRE}}
+          github-token: ${{ secrets.GITHUB_TOKEN_NOEXPIRE }}
           script: |
             github.issues.createComment({
               owner: 'lncm',
