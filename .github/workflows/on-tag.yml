@@ -139,11 +139,10 @@ jobs:
             "$SLUG:$VERSION-arm32v7" \
             "$SLUG:$VERSION-arm64v8"
 
-      - name: Annotate arm32v7
-        run: docker manifest annotate "$SLUG:$VERSION" "$SLUG:$VERSION-arm32v7" --os linux --arch arm   --variant v7
-
-      - name: Annotate arm64v8
-        run: docker manifest annotate "$SLUG:$VERSION" "$SLUG:$VERSION-arm64v8" --os linux --arch arm64 --variant v8
+      - name: Annotate images for manifest
+        run: |
+          docker manifest annotate "$SLUG:$VERSION" "$SLUG:$VERSION-arm32v7" --os linux --arch arm   --variant v7
+          docker manifest annotate "$SLUG:$VERSION" "$SLUG:$VERSION-arm64v8" --os linux --arch arm64 --variant v8
 
       - name: Push manifest
         run: docker manifest push "$SLUG:$VERSION"
