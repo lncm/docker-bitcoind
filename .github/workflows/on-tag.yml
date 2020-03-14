@@ -200,6 +200,4 @@ jobs:
           name: ${{ env.VERSION }}
           body: "This release packages `bitcoind` to be on par with https://github.com/bitcoin/bitcoin/releases/tag/${{ env.VERSION }}"
           gzip: false
-          files: images/*
-
-
+          files: docker-images/*
