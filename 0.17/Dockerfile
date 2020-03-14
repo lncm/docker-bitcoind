@@ -215,7 +215,7 @@ RUN apk add --no-cache \
         libstdc++ \
         libzmq
 
-COPY  --from=builder /opt/bitcoin-$VERSION/bin/  /usr/local/bin/
+COPY  --from=builder /opt/bitcoin-$VERSION/bin/bitcoin*  /usr/local/bin/
 
 # NOTE: Default GID == UID == 1000
 RUN adduser --disabled-password \
