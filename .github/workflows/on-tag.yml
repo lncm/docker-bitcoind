@@ -196,7 +196,7 @@ jobs:
       - name: Upload images to Github Release
         uses: meeDamian/github-release@v1.0.1
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN_NOEXPIRE }}
           name: ${{ env.VERSION }}
           body: "This release packages `bitcoind` to be on par with https://github.com/bitcoin/bitcoin/releases/tag/${{ env.VERSION }}"
           gzip: false
