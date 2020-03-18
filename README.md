@@ -36,7 +36,6 @@ This repo builds [`bitcoind`] in an auditable way, and packages it into a minima
 * All architectures are aggregated under an easy-to-use [Docker Manifest]
 * All [`git-tags`] are [build automatically], and with an [auditable trace]
 * Each successful build of a `git tag` pushes result Docker image to [Docker Hub]
-* Each successful build of a `git tag` uploads result Go binaries to [Github Releases]
 * Images pushed to Docker Hub are never deleted (even if `lnd` version gets overriden, previous one is preserved)
 * All `final` images are based on Alpine for minimum base size
 * All binaries are [`strip`ped]
