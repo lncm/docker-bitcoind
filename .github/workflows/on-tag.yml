@@ -192,12 +192,20 @@ jobs:
       - name: Push manifest
         run: docker manifest push "$SLUG:$VERSION"
 
+      - name: Create & print SHA256SUMS file
+        run: |
+          (cd docker-images;  sha256sum *) >> ./SHA256SUMS
+          cat ./SHA256SUMS
 
       - name: Upload images to Github Release
-        uses: meeDamian/github-release@v1.0.1
+        uses: meeDamian/github-release@2.0
         with:
           token: ${{ secrets.GITHUB_TOKEN_NOEXPIRE }}
           name: ${{ env.VERSION }}
-          body: "This release packages `bitcoind` to be on par with https://github.com/bitcoin/bitcoin/releases/tag/${{ env.VERSION }}"
+          body: |
+            This release packages `bitcoind` to be on par with https://github.com/bitcoin/bitcoin/releases/tag/${{ env.VERSION }}
+          prerelease: true
           gzip: false
-          files: docker-images/*
+          files: >
+            docker-images/*
+            SHA256SUMS
