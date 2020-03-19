@@ -65,7 +65,6 @@ This repo builds [`bitcoind`] in an auditable way, and packages it into a minima
 
 * `v0.19.1`
 * `v0.19.0.1`
-* `v0.19.0`
 * `v0.18.1`
 * `v0.17.2`
 * `v0.16.3`
