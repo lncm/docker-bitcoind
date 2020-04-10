@@ -140,3 +140,20 @@ docker exec -it bitcoind bitcoin-cli -getinfo
 docker exec -it bitcoind bitcoin-cli getblockcount
 ```
 
+#### Troubleshooting
+
+##### Bitcoind isn't starting
+
+Here are some possible reasons why.
+
+###### Permissions for the bitcoin data directory is not correct
+
+The permissions for the bitcoin data direct is assumed to be UID 1000 (first user). 
+
+If you have a different setup, please do the following
+
+```bash
+# where ".bitcoin" is the data directory
+sudo chown -R 1000.1000 $HOME/.bitcoin
+```
+
