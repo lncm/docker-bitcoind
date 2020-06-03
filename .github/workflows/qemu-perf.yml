@@ -16,7 +16,7 @@ jobs:
 
     env:
       DOCKER_BUILDKIT: 1
-      MINOR: 0.20
+      MINOR: '0.20'
 
     strategy:
       fail-fast: false
