@@ -1,12 +1,13 @@
 lncm/bitcoind
 =============
 
-![Build Status]
+[![Build Status]][builds]
 [![gh_last_release_svg]][gh_last_release_url]
 [![Docker Image Size]][lnd-docker-hub]
 [![Docker Pulls Count]][lnd-docker-hub]
 
-[Build Status]: https://github.com/lncm/docker-bitcoind/workflows/Build%20%26%20deploy%20on%20git%20tag%20push/badge.svg
+[Build Status]: https://github.com/lncm/docker-bitcoind/workflows/Build%20&%20deploy%20on%20git%20tag%20push/badge.svg
+[builds]: https://github.com/lncm/docker-bitcoind/actions?query=workflow%3A%22Build+%26+deploy+on+git+tag+push%22
 
 [gh_last_release_svg]: https://img.shields.io/github/v/release/lncm/docker-bitcoind?sort=semver
 [gh_last_release_url]: https://github.com/lncm/docker-bitcoind/releases/latest
