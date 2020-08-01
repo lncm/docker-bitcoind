@@ -6,16 +6,11 @@
 ARG VERSION=0.20.1
 
 
-
 # CPU archtecture to build binaries for
 ARG ARCH
 
-# Define default versions so that they don't have to be repreated throughout the file
-ARG VER_ALPINE=3.12
-
-# $USER name, and data $DIR to be used in the `final` image
-ARG USER=bitcoind
-ARG DIR=/data
+# OS to be used for build, and final stage, options: alpine, debian
+ARG OS=alpine
 
 # Choose where to get bitcoind sources from, options: release, git
 #   NOTE: Only `SOURCE=git` can be used for RC releases
@@ -25,33 +20,44 @@ ARG SOURCE=release
 #   NOTE: When compiled here total execution time exceeds allowed CI limits, so pre-built one is used by default
 ARG BDB_SOURCE=prebuilt
 
+# Define default versions so that they don't have to be repreated throughout the file
+ARG VER_ALPINE=3.12
+ARG VER_DEBIAN=buster-slim
+
+# $USER name, and data $DIR to be used in the `final` image
+ARG USER=bitcoind
+ARG DIR=/data
 
 
-#
-## `preparer-base` installs dependencies needed by both ways of fetching the source,
-#       as well as imports GPG keys needed to verify authenticity of the source.
-#
-FROM alpine:${VER_ALPINE} AS preparer-base
 
 # Make sure APKs are downloaded over SSL. See: https://github.com/gliderlabs/docker-alpine/issues/184
+FROM ${ARCH:+${ARCH}/}alpine:${VER_ALPINE} AS alpine
 RUN sed -i 's|http://dl-cdn.alpinelinux.org|https://alpine.global.ssl.fastly.net|g' /etc/apk/repositories
 
-RUN apk add --no-cache  gnupg
+FROM ${ARCH:+${ARCH}/}debian:${VER_DEBIAN} AS debian
 
+
+
+FROM debian AS debian-base
+RUN apt-get update
+RUN apt-get install -y gnupg git
+
+FROM alpine AS alpine-base
+RUN apk add --no-cache  gnupg git
+
+
+
+FROM ${OS}-base AS preparer
 ENV KEYS 71A3B16735405025D447E8F274810B012346C9A6 01EA5486DE18A882D4C2684590C8019E36C2E964
 RUN timeout 16s  gpg  --keyserver keyserver.ubuntu.com  --recv-keys $KEYS
-
 # Print imported keys, but also ensure there's no other keys in the system
 RUN gpg --list-keys | tail -n +3 | tee /tmp/keys.txt && \
     gpg --list-keys $KEYS | diff - /tmp/keys.txt
 
 
 
-#
-## Option #1: [default] Fetch bitcoind source from release tarballs
-#
-FROM preparer-base AS preparer-release
 
+FROM preparer AS source-from-release
 ARG VERSION
 
 # Download checksums
@@ -72,14 +78,8 @@ RUN tar -xzf "bitcoin-$VERSION.tar.gz" && \
 
 
 
-#
-## Option #2: Fetch bitcoind source from GitHub
-#
-FROM preparer-base AS preparer-git
-
+FROM preparer AS source-from-git
 ARG VERSION
-
-RUN apk add --no-cache git
 
 # Fetch the source code at a specific TAG
 RUN git clone  -b "v$VERSION"  --depth=1  https://github.com/bitcoin/bitcoin.git  "/bitcoin-$VERSION/"
@@ -89,11 +89,7 @@ RUN cd "/bitcoin-$VERSION/" && \
     git verify-tag "v$VERSION"
 
 
-
-#
-## Alias to go around `COPY` not accepting ARGs in value passed to `--from=`
-#
-FROM preparer-${SOURCE} AS preparer
+FROM source-from-${SOURCE} AS sourcer
 
 
 
@@ -107,7 +103,6 @@ FROM lncm/berkeleydb:v4.8.30.NC${ARCH:+-${ARCH}} AS berkeleydb-prebuilt
 ## `berkeleydb-compile` builds BerkeleyDB from source using script provided in bitcoind repo.
 #
 FROM alpine:${VER_ALPINE} AS berkeleydb-compile
-# TODO: implement ^^
 RUN echo "Not implemented" && exit 1
 
 
@@ -115,20 +110,8 @@ FROM berkeleydb-${BDB_SOURCE} AS berkeleydb
 
 
 
-#
-## `builder` builds Bitcoin Core regardless on how the source, and BDB code were obtained.
-#
-# NOTE: this stage is emulated using QEMU
-# NOTE: `${ARCH:+${ARCH}/}` - if ARCH is set, append `/` to it, leave it empty otherwise
-FROM ${ARCH:+${ARCH}/}alpine:${VER_ALPINE} AS builder
 
-ARG VERSION
-ARG SOURCE
-
-# Use APK repos over HTTPS. See: https://github.com/gliderlabs/docker-alpine/issues/184
-RUN sed -i 's|http://dl-cdn.alpinelinux.org|https://alpine.global.ssl.fastly.net|g' /etc/apk/repositories
-
-# TODO: Check which dependencies are not necessary here
+FROM alpine-base AS alpine-builder
 RUN apk add --no-cache \
         autoconf \
         automake \
@@ -138,11 +121,17 @@ RUN apk add --no-cache \
         file \
         libevent-dev \
         libressl \
-        libressl-dev \
         libtool \
         linux-headers \
-        protobuf-dev \
         zeromq-dev
+
+FROM debian-base AS debian-builder
+RUN echo "Not implemented" && exit 1
+
+
+FROM ${OS}-builder AS builder
+
+ARG VERSION
 
 # Fetch pre-built berkeleydb
 COPY  --from=berkeleydb /opt/  /opt/
@@ -151,13 +140,12 @@ COPY  --from=berkeleydb /opt/  /opt/
 WORKDIR /bitcoin-$VERSION/
 
 # Copy bitcoin source (downloaded & verified in previous stages)
-COPY  --from=preparer /bitcoin-$VERSION/  ./
+COPY  --from=sourcer /bitcoin-$VERSION/  ./
 
 ENV BITCOIN_PREFIX /opt/bitcoin-$VERSION
 
 RUN ./autogen.sh
 
-# TODO: Try to optimize on passed params
 RUN ./configure LDFLAGS=-L/opt/db4/lib/ CPPFLAGS=-I/opt/db4/include/ \
     --prefix="$BITCOIN_PREFIX" \
     --disable-man \
@@ -183,33 +171,27 @@ RUN sha256sum "$BITCOIN_PREFIX/bin/bitcoin"*
 
 
 
-#
-## `final` aggregates build results from previous stages into a necessary minimum
-#       ready to be used, and published to Docker Hub.
-#
-# NOTE: this stage is emulated using QEMU
-# NOTE: `${ARCH:+${ARCH}/}` - if ARCH is set, append `/` to it, leave it empty otherwise
-FROM ${ARCH:+${ARCH}/}alpine:${VER_ALPINE} AS final
+FROM alpine AS alpine-final
+RUN apk add --no-cache \
+        boost-filesystem \
+        boost-thread \
+        libevent \
+        libsodium \
+        libstdc++ \
+        libzmq
+
+
+FROM debian AS debian-final
+RUN echo "Not implemented" && exit 1
+
+
+FROM ${OS}-final AS final
 
 ARG VERSION
 ARG USER
 ARG DIR
 
 LABEL maintainer="Damian Mee (@meeDamian)"
-
-# Use APK repos over HTTPS. See: https://github.com/gliderlabs/docker-alpine/issues/184
-RUN sed -i 's|http://dl-cdn.alpinelinux.org|https://alpine.global.ssl.fastly.net|g' /etc/apk/repositories
-
-# TODO: Check which dependencies are not necessary here
-RUN apk add --no-cache \
-        boost-chrono \
-        boost-filesystem \
-        boost-thread \
-        libevent \
-        libressl \
-        libsodium \
-        libstdc++ \
-        libzmq
 
 COPY  --from=builder /opt/bitcoin-$VERSION/bin/bitcoin*  /usr/local/bin/
 
