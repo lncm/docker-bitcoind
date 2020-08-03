@@ -5,10 +5,10 @@
 #           as many things (like download URLs) use this form instead.
 ARG VERSION=0.20.0
 
-# CPU archtecture to build binaries for
+# CPU architecture to build binaries for
 ARG ARCH
 
-# Define default versions so that they don't have to be repreated throughout the file
+# Define default versions so that they don't have to be repeated throughout the file
 ARG VER_ALPINE=3.12
 
 # $USER name, and data $DIR to be used in the `final` image
@@ -136,10 +136,8 @@ RUN apk add --no-cache \
         file \
         libevent-dev \
         libressl \
-        libressl-dev \
         libtool \
         linux-headers \
-        protobuf-dev \
         zeromq-dev
 
 # Fetch pre-built berkeleydb
@@ -200,11 +198,9 @@ RUN sed -i 's|http://dl-cdn.alpinelinux.org|https://alpine.global.ssl.fastly.net
 
 # TODO: Check which dependencies are not necessary here
 RUN apk add --no-cache \
-        boost-chrono \
         boost-filesystem \
         boost-thread \
         libevent \
-        libressl \
         libsodium \
         libstdc++ \
         libzmq
