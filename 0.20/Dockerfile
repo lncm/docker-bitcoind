@@ -128,7 +128,6 @@ ARG SOURCE
 # Use APK repos over HTTPS. See: https://github.com/gliderlabs/docker-alpine/issues/184
 RUN sed -i 's|http://dl-cdn.alpinelinux.org|https://alpine.global.ssl.fastly.net|g' /etc/apk/repositories
 
-# TODO: Check which dependencies are not necessary here
 RUN apk add --no-cache \
         autoconf \
         automake \
@@ -198,7 +197,6 @@ LABEL maintainer="Damian Mee (@meeDamian)"
 # Use APK repos over HTTPS. See: https://github.com/gliderlabs/docker-alpine/issues/184
 RUN sed -i 's|http://dl-cdn.alpinelinux.org|https://alpine.global.ssl.fastly.net|g' /etc/apk/repositories
 
-# TODO: Check which dependencies are not necessary here
 RUN apk add --no-cache \
         boost-filesystem \
         boost-thread \
