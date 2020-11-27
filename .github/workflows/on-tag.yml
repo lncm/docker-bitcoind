@@ -2,6 +2,7 @@ name: Build & deploy on git tag push
 
 env:
   APP: bitcoind
+  ACTIONS_ALLOW_UNSECURE_COMMANDS: true
 
   # Capture groups within $TAG_FMT:
   #   \1 => TAG       vX.Y.Z[.P]+build<N>

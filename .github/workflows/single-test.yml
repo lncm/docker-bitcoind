@@ -2,6 +2,7 @@ name: Test build bitcoind on push to vX.Z-test branch
 
 env:
   APP: bitcoind
+  ACTIONS_ALLOW_UNSECURE_COMMANDS: true
 
 on:
   push:
