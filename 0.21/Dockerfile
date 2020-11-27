@@ -159,6 +159,7 @@ RUN ./configure LDFLAGS=-L/opt/db4/lib/ CPPFLAGS=-I/opt/db4/include/ \
     --disable-man \
     --disable-shared \
     --disable-ccache \
+    --disable-tests \
     --enable-static \
     --enable-reduce-exports \
     --without-gui \
