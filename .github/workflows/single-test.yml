@@ -1,7 +1,7 @@
 name: Test build bitcoind on push to vX.Z-test branch
 
 env:
-  APP: bitcoind
+  APP: nolim1t/bitcoind
   ACTIONS_ALLOW_UNSECURE_COMMANDS: true
 
 on:
@@ -41,6 +41,16 @@ jobs:
           --build-arg "ARCH=${{ matrix.arch }}"
           --build-arg "SOURCE=git"
           --tag       "$APP"
+      
+      - name: Push ${{ env.APP }} to docker hub
+        run: >
+          if [[ ! -z ${{ secrets.DOCKER_HUB_USER }} ]] && [[ ! -z ${{ secrets.DOCKER_USER }} ]] && [[ ! -z ${{ secrets.DOCKER_PASS }} ]]; then
+            echo "Pushing to docker hub if credentials exist"
+            echo ${{ secrets.DOCKER_PASS }} | docker login -u=${{ secrets.DOCKER_USER }} --password-stdin
+            docker push ${{ env.APP }}
+          else
+            echo "Not pushing to docker up as credentials don't exist"
+          fi
 
       - name: Show built image details
         run: docker images "$APP"
