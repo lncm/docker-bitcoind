@@ -64,10 +64,10 @@ jobs:
             ARGS=${*:-"--version"}
 
             printf "\n$ %s %s\n"  "$ENTRYPOINT"  "$ARGS"
-            docker run --rm  --entrypoint "$ENTRYPOINT"  "$APP"  $ARGS
+            docker run --rm  --entrypoint "$ENTRYPOINT"  "${APP}:${MINOR}-${{ matrix.arch }}"  $ARGS
           }
 
-          docker inspect "$APP" | jq '.'
+          docker inspect "${APP}:${MINOR}-${{ matrix.arch }}" | jq '.'
           printf "\n"
 
           run bitcoind | head -n 1
