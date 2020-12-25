@@ -1,5 +1,7 @@
 name: Update Docker Hub README everytime it changes on master
 
+env:
+    ACTIONS_ALLOW_UNSECURE_COMMANDS: true
 on:
   push:
     branches: [ 'master' ]
