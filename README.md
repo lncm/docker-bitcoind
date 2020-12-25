@@ -17,7 +17,7 @@ lncm/bitcoind
 [lnd-docker-hub]: https://hub.docker.com/r/lncm/bitcoind
 
 
-This repo builds [`bitcoind`] in an auditable way, and packages it into a minimal Docker containers provided for various CPU architectures.
+This repo builds [`bitcoind`] in an [auditable way](https://github.com/lncm/docker-bitcoind), and packages it into a minimal Docker containers provided for various CPU architectures.
 
 [`bitcoind`]: https://github.com/bitcoin/bitcoin
 
