@@ -131,6 +131,7 @@ RUN apk add --no-cache \
         autoconf \
         automake \
         boost-dev \
+        sqlite-dev \
         build-base \
         chrpath \
         file \
@@ -165,6 +166,7 @@ RUN ./configure LDFLAGS=-L/opt/db4/lib/ CPPFLAGS=-I/opt/db4/include/ \
     --without-gui \
     --without-libs \
     --with-utils \
+    --with-sqlite=yes \
     --with-daemon
 
 RUN make -j$(( $(nproc) + 1 )) check
