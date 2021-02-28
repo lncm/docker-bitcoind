@@ -205,7 +205,8 @@ RUN apk add --no-cache \
         libevent \
         libsodium \
         libstdc++ \
-        libzmq
+        libzmq \
+        sqlite-libs
 
 COPY  --from=builder /opt/bitcoin-$VERSION/bin/bitcoin*  /usr/local/bin/
 
