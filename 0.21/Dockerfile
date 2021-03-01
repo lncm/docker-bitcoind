@@ -156,6 +156,7 @@ RUN ./autogen.sh
 
 # TODO: Try to optimize on passed params
 RUN ./configure LDFLAGS=-L/opt/db4/lib/ CPPFLAGS=-I/opt/db4/include/ \
+    CXXFLAGS="-O2" \
     --prefix="$BITCOIN_PREFIX" \
     --disable-man \
     --disable-shared \
