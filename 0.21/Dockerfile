@@ -57,7 +57,7 @@ ARG VERSION
 ADD https://bitcoincore.org/bin/bitcoin-core-$VERSION/SHA256SUMS.asc  ./
 
 # Download source code (intentionally different website than checksums)
-ADD https://bitcoin.org/bin/bitcoin-core-$VERSION/bitcoin-$VERSION.tar.gz ./
+ADD https://bitcoincore.org/bin/bitcoin-core-$VERSION/bitcoin-$VERSION.tar.gz ./
 
 # Verify that hashes are signed with the previously imported key
 RUN gpg --verify SHA256SUMS.asc
