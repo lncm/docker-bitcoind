@@ -45,8 +45,8 @@ RUN timeout 32s gpg  --keyserver keyserver.ubuntu.com  --recv-keys $KEYS
 RUN timeout 32s gpg --keyserver keys.openpgp.org --recv-keys $KEYS2
 
 # Print imported keys, but also ensure there's no other keys in the system
-RUN gpg --list-keys | tail -n +3 | tee /tmp/keys.txt && \
-    gpg --list-keys $KEYS | diff - /tmp/keys.txt
+#RUN gpg --list-keys | tail -n +3 | tee /tmp/keys.txt && \
+#    gpg --list-keys $KEYS | diff - /tmp/keys.txt
 
 
 
