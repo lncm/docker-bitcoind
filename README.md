@@ -64,6 +64,7 @@ This repo builds [`bitcoind`] in an [auditable way](https://github.com/lncm/dock
 
 > **NOTE:** For an always up-to-date list see: https://hub.docker.com/r/lncm/bitcoind/tags
 
+* `v22.0`
 * `v0.21.1`
 * `v0.21.0`
 * `v0.20.0`
