@@ -64,6 +64,7 @@ This repo builds [`bitcoind`] in an [auditable way](https://github.com/lncm/dock
 
 > **NOTE:** For an always up-to-date list see: https://hub.docker.com/r/lncm/bitcoind/tags
 
+* `v22.0`
 * `v0.21.1`
 * `v0.21.0`
 * `v0.20.0`
@@ -82,7 +83,7 @@ This repo builds [`bitcoind`] in an [auditable way](https://github.com/lncm/dock
 First pull the image from [Docker Hub]:
 
 ```bash
-docker pull lncm/bitcoind:v0.21.1
+docker pull lncm/bitcoind:v22.0
 ```
 
 > **NOTE:** Running above will automatically choose native architecture of your CPU.
@@ -92,7 +93,7 @@ docker pull lncm/bitcoind:v0.21.1
 Or, to pull a specific CPU architecture:
 
 ```bash
-docker pull lncm/bitcoind:v0.21.1-arm64v8
+docker pull lncm/bitcoind:v22.0-arm64v8
 ```
 
 #### Start
@@ -113,7 +114,7 @@ docker run  -it  --rm  --detach \
     -p 28332:28332 \
     -p 28333:28333 \
     --name bitcoind \
-    lncm/bitcoind:v0.21.1
+    lncm/bitcoind:v22.0
 ```
 
 That will run bitcoind such that:
