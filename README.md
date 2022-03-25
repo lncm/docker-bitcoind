@@ -151,6 +151,29 @@ docker exec -it bitcoind bitcoin-cli -getinfo
 docker exec -it bitcoind bitcoin-cli getblockcount
 ```
 
+### Docker Compose
+Here is a docker-compose.yml for mainnet
+```yaml
+version: '3'
+services:
+  bitcoin:
+    container_name: bitcoind
+    # wildcard user 0:0 to avoid permission problems
+    user: 0:0
+    image: lncm/bitcoind:v22.0
+    volumes:
+      - ${PWD}/bitcoin:/data/.bitcoin
+    restart: on-failure
+    stop_grace_period: 15m30s
+    ports:
+      - "8333:8333"
+      - "8332:8332"
+      - "28332:28332"
+      - "28333:28333"
+```
+First, ensure that the `bitcoin/` folder is in the directory containing docker-compose.yml.
+Then, Docker Compose will mount the `bitcoin/` folder to `/data/.bitcoin`.
+
 #### Troubleshooting
 
 ##### Bitcoind isn't starting
