@@ -186,7 +186,7 @@ RUN ./configure LDFLAGS=-L/opt/db4/lib/ CPPFLAGS=-I/opt/db4/include/ \
     --with-sqlite=yes \
     --with-daemon
 
-RUN make -j$(( $(nproc) + 1 )) check
+RUN make -j$(( $(nproc) + 1 ))
 RUN make install
 
 # List installed binaries pre-strip & strip them
