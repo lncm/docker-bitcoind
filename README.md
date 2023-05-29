@@ -64,6 +64,9 @@ This repo builds [`bitcoind`] in an [auditable way](https://github.com/lncm/dock
 
 > **NOTE:** For an always up-to-date list see: https://hub.docker.com/r/lncm/bitcoind/tags
 
+* `v25.0`
+* `v24.0.1`
+* `v23.0`
 * `v22.0`
 * `v0.21.1`
 * `v0.21.0`
@@ -83,7 +86,7 @@ This repo builds [`bitcoind`] in an [auditable way](https://github.com/lncm/dock
 First pull the image from [Docker Hub]:
 
 ```bash
-docker pull lncm/bitcoind:v22.0
+docker pull lncm/bitcoind:v25.0
 ```
 
 > **NOTE:** Running above will automatically choose native architecture of your CPU.
@@ -93,14 +96,14 @@ docker pull lncm/bitcoind:v22.0
 Or, to pull a specific CPU architecture:
 
 ```bash
-docker pull lncm/bitcoind:v22.0-arm64v8
+docker pull lncm/bitcoind:v25.0-arm64v8
 ```
 
 #### Start
 
 First of all, create a directory in your home directory called `.bitcoin`
 
-Next, create a config file. You can take a look at the following samples: thebox-compose-system ([1](https://github.com/lncm/thebox-compose-system/blob/master/bitcoin/bitcoin.conf)) / bitcoin main repo [(2)](https://github.com/bitcoin/bitcoin/blob/master/share/examples/bitcoin.conf)
+Next, create a config file. You can take a look at the following sample: thebox-compose-system ([1](https://github.com/lncm/thebox-compose-system/blob/master/bitcoin/bitcoin.conf)).
 
 Some guides on how to configure bitcoin can be found [here](https://github.com/bitcoin/bitcoin/blob/master/doc/bitcoin-conf.md) (bitcoin git repo)
 
@@ -114,7 +117,7 @@ docker run  -it  --rm  --detach \
     -p 28332:28332 \
     -p 28333:28333 \
     --name bitcoind \
-    lncm/bitcoind:v22.0
+    lncm/bitcoind:v25.0
 ```
 
 That will run bitcoind such that:
@@ -160,7 +163,7 @@ services:
     container_name: bitcoind
     # wildcard user 0:0 to avoid permission problems
     user: 0:0
-    image: lncm/bitcoind:v22.0
+    image: lncm/bitcoind:v25.0
     volumes:
       - ${PWD}/bitcoin:/data/.bitcoin
     restart: on-failure
