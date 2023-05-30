@@ -9,7 +9,7 @@ ARG VERSION=25.0
 ARG ARCH
 
 # Define default versions so that they don't have to be repeated throughout the file
-ARG VER_ALPINE=3.12
+ARG VER_ALPINE=3.18
 
 # $USER name, and data $DIR to be used in the `final` image
 ARG USER=bitcoind
@@ -30,9 +30,6 @@ ARG BDB_SOURCE=prebuilt
 #       as well as imports GPG keys needed to verify authenticity of the source.
 #
 FROM alpine:${VER_ALPINE} AS preparer-base
-
-# Make sure APKs are downloaded over SSL. See: https://github.com/gliderlabs/docker-alpine/issues/184
-RUN sed -i 's|http://dl-cdn.alpinelinux.org|https://alpine.global.ssl.fastly.net|g' /etc/apk/repositories
 
 RUN apk add --no-cache  gnupg
 
@@ -140,9 +137,6 @@ FROM ${ARCH:+${ARCH}/}alpine:${VER_ALPINE} AS builder
 ARG VERSION
 ARG SOURCE
 
-# Use APK repos over HTTPS. See: https://github.com/gliderlabs/docker-alpine/issues/184
-RUN sed -i 's|http://dl-cdn.alpinelinux.org|https://alpine.global.ssl.fastly.net|g' /etc/apk/repositories
-
 RUN apk add --no-cache \
         autoconf \
         automake \
@@ -213,12 +207,7 @@ ARG DIR
 
 LABEL maintainer="Damian Mee (@meeDamian)"
 
-# Use APK repos over HTTPS. See: https://github.com/gliderlabs/docker-alpine/issues/184
-RUN sed -i 's|http://dl-cdn.alpinelinux.org|https://alpine.global.ssl.fastly.net|g' /etc/apk/repositories
-
 RUN apk add --no-cache \
-        boost-filesystem \
-        boost-thread \
         libevent \
         libsodium \
         libstdc++ \
