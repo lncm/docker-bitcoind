@@ -208,8 +208,6 @@ ARG DIR
 LABEL maintainer="Damian Mee (@meeDamian)"
 
 RUN apk add --no-cache \
-        boost-filesystem \
-        boost-thread \
         libevent \
         libsodium \
         libstdc++ \
