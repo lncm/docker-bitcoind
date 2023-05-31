@@ -4,6 +4,7 @@
 #   NOTE: Unlike our other images this one is NOT prefixed with `v`,
 #           as many things (like download URLs) use this form instead.
 ARG VERSION=25.0.0
+ARG URLVERSION=25.0
 
 # CPU architecture to build binaries for
 ARG ARCH
@@ -63,24 +64,28 @@ FROM preparer-base AS preparer-release
 ARG VERSION
 
 # Download sigs
-ADD https://bitcoincore.org/bin/bitcoin-core-$VERSION/SHA256SUMS.asc  ./
+ADD https://bitcoincore.org/bin/
+
+
+
+core-$VERSION/SHA256SUMS.asc  ./
 # Download checksums
-ADD https://bitcoincore.org/bin/bitcoin-core-$VERSION/SHA256SUMS  ./
+ADD https://bitcoincore.org/bin/bitcoin-core-$URLVERSION/SHA256SUMS  ./
 
 # Download source code (intentionally different website than checksums)
 # uncomment
 #ADD https://bitcoin.org/bin/bitcoin-core-$VERSION/bitcoin-$VERSION.tar.gz ./
-ADD https://bitcoincore.org/bin/bitcoin-core-$VERSION/bitcoin-$VERSION.tar.gz ./
+ADD https://bitcoincore.org/bin/bitcoin-core-$URLVERSION/bitcoin-$URLVERSION.tar.gz ./
 
 # Verify that hashes are signed with the previously imported key
 #RUN gpg --verify SHA256SUMS.asc SHA256SUMS
 
 # Verify that downloaded source-code archive matches exactly the hash that's provided
-RUN grep " bitcoin-$VERSION.tar.gz\$" SHA256SUMS | sha256sum -c -
+RUN grep " bitcoin-$URLVERSION.tar.gz\$" SHA256SUMS | sha256sum -c -
 
 # Extract
-RUN tar -xzf "bitcoin-$VERSION.tar.gz" && \
-    rm  -f   "bitcoin-$VERSION.tar.gz"
+RUN tar -xzf "bitcoin-$URLVERSION.tar.gz" && \
+    rm  -f   "bitcoin-$URLVERSION.tar.gz"
 
 
 
@@ -155,12 +160,12 @@ RUN apk add --no-cache \
 COPY  --from=berkeleydb /opt/  /opt/
 
 # Change to the extracted directory
-WORKDIR /bitcoin-$VERSION/
+WORKDIR /bitcoin-$URLVERSION/
 
 # Copy bitcoin source (downloaded & verified in previous stages)
-COPY  --from=preparer /bitcoin-$VERSION/  ./
+COPY  --from=preparer /bitcoin-$URLVERSION/  ./
 
-ENV BITCOIN_PREFIX /opt/bitcoin-$VERSION
+ENV BITCOIN_PREFIX /opt/bitcoin-$URLVERSION
 
 RUN ./autogen.sh
 
@@ -214,7 +219,7 @@ RUN apk add --no-cache \
         libzmq \
         sqlite-libs
 
-COPY  --from=builder /opt/bitcoin-$VERSION/bin/bitcoin*  /usr/local/bin/
+COPY  --from=builder /opt/bitcoin-$URLVERSION/bin/bitcoin*  /usr/local/bin/
 
 # NOTE: Default GID == UID == 1000
 RUN adduser --disabled-password \
