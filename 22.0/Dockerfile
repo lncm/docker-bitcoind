@@ -3,7 +3,7 @@
 # VERSION of Bitcoin Core to be build
 #   NOTE: Unlike our other images this one is NOT prefixed with `v`,
 #           as many things (like download URLs) use this form instead.
-ARG VERSION=22.0
+ARG VERSION=22.1
 
 # CPU architecture to build binaries for
 ARG ARCH
