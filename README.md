@@ -161,11 +161,10 @@ version: '3'
 services:
   bitcoin:
     container_name: bitcoind
-    # wildcard user 0:0 to avoid permission problems
-    user: 0:0
+    user: 1000:1000
     image: lncm/bitcoind:v25.0
     volumes:
-      - ${PWD}/bitcoin:/data/.bitcoin
+      - ./bitcoin:/data/.bitcoin
     restart: on-failure
     stop_grace_period: 15m30s
     ports:
