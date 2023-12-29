@@ -9,7 +9,7 @@ ARG VERSION=26.0
 ARG ARCH
 
 # Define default versions so that they don't have to be repeated throughout the file
-ARG VER_ALPINE=3.18
+ARG VER_ALPINE=3.19
 
 # $USER name, and data $DIR to be used in the `final` image
 ARG USER=bitcoind
@@ -60,8 +60,7 @@ ADD https://bitcoincore.org/bin/bitcoin-core-$VERSION/SHA256SUMS.asc ./
 ADD https://bitcoincore.org/bin/bitcoin-core-$VERSION/SHA256SUMS ./
 
 # Download source code from same website as github is probably deterministicly built
-ADD https://bitcoincore.org/bin/bitcoin-core-26.0/bitcoin-$VERSION.tar.gz ./bitcoin-$VERSION.tar.gz
-#ADD https://github.com/bitcoin/bitcoin/archive/refs/tags/v$VERSION.tar.gz ./bitcoin-$VERSION.tar.gz
+ADD https://bitcoincore.org/bin/bitcoin-core-$VERSION/bitcoin-$VERSION.tar.gz ./bitcoin-$VERSION.tar.gz
 
 # Verify that hashes are signed with the previously imported key
 RUN gpg --verify SHA256SUMS.asc SHA256SUMS
