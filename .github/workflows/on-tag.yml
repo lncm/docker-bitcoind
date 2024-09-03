@@ -144,7 +144,7 @@ jobs:
           echo ::set-env name=BUILD::"$(echo "$GITHUB_REF" | sed -E "s|$TAG_FMT|\4|")"
 
       - name: Download all build artifacts
-        uses: actions/download-artifact@v1.0.0
+        uses: actions/download-artifact@v4.1.7
         with:
           name: docker-images
 
