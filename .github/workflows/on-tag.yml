@@ -118,7 +118,7 @@ jobs:
       - name: Upload docker image as build artifact
         uses: actions/upload-artifact@v4
         with:
-          name: docker-images
+          name: docker-images-${{ matrix.arch }}
           path: images/
 
 
@@ -141,7 +141,8 @@ jobs:
       - name: Download all build artifacts
         uses: actions/download-artifact@v4.1.7
         with:
-          name: docker-images
+          pattern: docker-images-*
+          merge-multiple: true
 
       - name: Print sha256sum of downloaded images
         run: sha256sum docker-images/*
