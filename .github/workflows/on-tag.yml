@@ -116,7 +116,7 @@ jobs:
         run: sha256sum images/*
 
       - name: Upload docker image as build artifact
-        uses: actions/upload-artifact@v1.0.0
+        uses: actions/upload-artifact@v4
         with:
           name: docker-images
           path: images/
