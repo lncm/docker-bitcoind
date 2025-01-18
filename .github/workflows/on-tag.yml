@@ -143,6 +143,7 @@ jobs:
         with:
           pattern: docker-images-*
           merge-multiple: true
+          path: docker-images
 
       - name: Print sha256sum of downloaded images
         run: sha256sum docker-images/*
